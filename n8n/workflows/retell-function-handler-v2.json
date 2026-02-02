@@ -1,0 +1,675 @@
+{
+  "name": "Retell Function Handler v2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "retell-function",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 400],
+      "webhookId": "retell-function"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "value": "get_on_road_price",
+              "outputKey": "get_on_road_price"
+            },
+            {
+              "value": "check_availability",
+              "outputKey": "check_availability"
+            },
+            {
+              "value": "find_nearest_showroom",
+              "outputKey": "find_nearest_showroom"
+            },
+            {
+              "value": "book_test_drive",
+              "outputKey": "book_test_drive"
+            },
+            {
+              "value": "get_model_specs",
+              "outputKey": "get_model_specs"
+            },
+            {
+              "value": "escalate_to_human",
+              "outputKey": "escalate_to_human"
+            }
+          ],
+          "fallbackOutput": "fallback"
+        },
+        "options": {},
+        "value": "={{ $json.body.name }}"
+      },
+      "id": "switch-1",
+      "name": "Route by Function",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [470, 400]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    s.name as showroom_name,\n    s.area,\n    s.phone,\n    m.name as model_name,\n    sp.ex_showroom_price,\n    sp.rto_charges,\n    sp.insurance_1yr,\n    sp.handling_charges,\n    sp.on_road_price\nFROM showroom_pricing sp\nJOIN showrooms s ON sp.showroom_id = s.id\nJOIN models m ON sp.model_id = m.id\nWHERE LOWER(m.name) LIKE LOWER('%' || $1 || '%')\nAND LOWER(s.city) = LOWER($2)\nAND s.is_active = true\nORDER BY sp.on_road_price ASC\nLIMIT 1",
+        "options": {
+          "queryParams": "={{ $json.body.args.model_name }},{{ $json.body.args.city }}"
+        }
+      },
+      "id": "postgres-price",
+      "name": "Get Price Query",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 100],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst args = $('Webhook').first().json.body.args;\n\nif (!data || !data.model_name) {\n  return [{\n    json: {\n      response: `Sorry, I couldn't find pricing for ${args.model_name} in ${args.city}. Please check the model name or city.`\n    }\n  }];\n}\n\nconst price = new Intl.NumberFormat('en-IN').format(data.on_road_price);\nconst exShowroom = new Intl.NumberFormat('en-IN').format(data.ex_showroom_price);\nconst rto = new Intl.NumberFormat('en-IN').format(data.rto_charges);\nconst insurance = new Intl.NumberFormat('en-IN').format(data.insurance_1yr);\n\nreturn [{\n  json: {\n    response: `The on-road price for ${data.model_name} in ${args.city} is ₹${price}. This includes ex-showroom ₹${exShowroom}, RTO ₹${rto}, and insurance ₹${insurance}. Available at ${data.showroom_name}, ${data.area}. Would you like to book a test drive?`\n  }\n}];"
+      },
+      "id": "code-price",
+      "name": "Format Price Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 100]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    s.name as showroom_name,\n    s.area,\n    s.phone,\n    m.name as model_name,\n    c.display_name as color_name,\n    i.quantity_available\nFROM inventory i\nJOIN showrooms s ON i.showroom_id = s.id\nJOIN models m ON i.model_id = m.id\nJOIN colors c ON i.color_id = c.id\nWHERE LOWER(m.name) LIKE LOWER('%' || $1 || '%')\nAND LOWER(s.city) = LOWER($2)\nAND ($3 = '' OR LOWER(c.name) LIKE LOWER('%' || $3 || '%'))\nAND s.is_active = true\nORDER BY i.quantity_available DESC\nLIMIT 5",
+        "options": {
+          "queryParams": "={{ $json.body.args.model_name }},{{ $json.body.args.city }},{{ $json.body.args.color || '' }}"
+        }
+      },
+      "id": "postgres-availability",
+      "name": "Check Availability Query",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 200],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map(i => i.json);\nconst args = $('Webhook').first().json.body.args;\n\nif (!items || items.length === 0 || !items[0].model_name) {\n  return [{\n    json: {\n      response: `Sorry, I couldn't find ${args.model_name} in ${args.city}. Please check the model name.`\n    }\n  }];\n}\n\nconst inStock = items.filter(i => i.quantity_available > 0);\n\nif (inStock.length > 0) {\n  const best = inStock[0];\n  return [{\n    json: {\n      response: `Yes! The ${best.model_name} in ${best.color_name} is available at ${best.showroom_name}, ${best.area}. We have ${best.quantity_available} unit${best.quantity_available > 1 ? 's' : ''} in stock. Would you like to book a test drive?`\n    }\n  }];\n} else {\n  const item = items[0];\n  return [{\n    json: {\n      response: `Sorry, the ${item.model_name} in ${item.color_name} is currently out of stock at ${item.showroom_name}. Would you like me to check other colors or nearby showrooms?`\n    }\n  }];\n}"
+      },
+      "id": "code-availability",
+      "name": "Format Availability Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 200]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    name,\n    area,\n    address,\n    phone,\n    operating_hours\nFROM showrooms\nWHERE LOWER(city) = LOWER($1)\nAND is_active = true\nORDER BY name\nLIMIT 5",
+        "options": {
+          "queryParams": "={{ $json.body.args.city }}"
+        }
+      },
+      "id": "postgres-showroom",
+      "name": "Find Showroom Query",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 300],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const showrooms = $input.all().map(i => i.json);\nconst args = $('Webhook').first().json.body.args;\n\nif (!showrooms || showrooms.length === 0 || !showrooms[0].name) {\n  return [{\n    json: {\n      response: `Sorry, we don't have any showrooms in ${args.city} yet. We have showrooms in Bangalore, Mumbai, Chennai, Delhi, and Hyderabad.`\n    }\n  }];\n}\n\nconst first = showrooms[0];\nlet response = `We have ${showrooms.length} TVS showroom${showrooms.length > 1 ? 's' : ''} in ${args.city}. `;\nresponse += `The nearest one is ${first.name} in ${first.area}. `;\nresponse += `Phone: ${first.phone}. Open ${first.operating_hours}. `;\nresponse += `Would you like directions or want to book a visit?`;\n\nreturn [{\n  json: { response }\n}];"
+      },
+      "id": "code-showroom",
+      "name": "Format Showroom Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "validate-fields",
+              "leftValue": "={{ $json.body.args.customer_phone && $json.body.args.customer_name && $json.body.args.model_name && $json.body.args.city }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-validate-testdrive",
+      "name": "Validate Test Drive Input",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [700, 400]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response",
+              "name": "response",
+              "type": "string",
+              "value": "I'd be happy to book a test drive for you. Could you please provide your name and phone number so we can confirm the booking?"
+            },
+            {
+              "id": "error",
+              "name": "data.error",
+              "type": "string",
+              "value": "missing_required_fields"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-missing-fields",
+      "name": "Missing Fields Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [920, 500]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, name, address, phone, city\nFROM showrooms\nWHERE LOWER(city) = LOWER($1)\nAND is_active = true\nORDER BY name\nLIMIT 1",
+        "options": {
+          "queryParams": "={{ $json.body.args.city }}"
+        }
+      },
+      "id": "postgres-find-showroom-td",
+      "name": "Find Showroom for Test Drive",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [920, 400],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "check-showroom",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-showroom-found-td",
+      "name": "Check Showroom Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1140, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const args = $('Webhook').first().json.body.args;\nreturn [{\n  json: {\n    response: `I'm sorry, we don't have any showrooms in ${args.city} yet. We have showrooms in Bangalore, Mumbai, Chennai, Delhi, and Hyderabad. Which city would you prefer?`,\n    data: {\n      error: 'no_showroom_in_city',\n      requested_city: args.city\n    }\n  }\n}];"
+      },
+      "id": "code-no-showroom-td",
+      "name": "No Showroom Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1360, 500]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, name, category\nFROM models\nWHERE LOWER(name) LIKE LOWER('%' || $1 || '%')\nAND is_active = true\nLIMIT 1",
+        "options": {
+          "queryParams": "={{ $('Webhook').first().json.body.args.model_name }}"
+        }
+      },
+      "id": "postgres-find-model-td",
+      "name": "Find Model for Test Drive",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1360, 400],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "check-model",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-model-found-td",
+      "name": "Check Model Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1580, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const args = $('Webhook').first().json.body.args;\nreturn [{\n  json: {\n    response: `I couldn't find that model in our lineup. We have Apache RTR series, Jupiter, Ntorq, Raider, and iQube. Which one would you like to test drive?`,\n    data: {\n      error: 'model_not_found',\n      requested_model: args.model_name\n    }\n  }\n}];"
+      },
+      "id": "code-no-model-td",
+      "name": "No Model Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1800, 500]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO clients (phone, name, city, source_channel, last_contact, created_at)\nVALUES (\n  $1,\n  $2,\n  $3,\n  'web_voice',\n  NOW(),\n  NOW()\n)\nON CONFLICT (phone) DO UPDATE SET\n  name = EXCLUDED.name,\n  city = EXCLUDED.city,\n  last_contact = NOW()\nRETURNING id, phone, name",
+        "options": {
+          "queryParams": "={{ $('Webhook').first().json.body.args.customer_phone }},={{ $('Webhook').first().json.body.args.customer_name }},={{ $('Webhook').first().json.body.args.city }}"
+        }
+      },
+      "id": "postgres-upsert-client",
+      "name": "Upsert Client",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1800, 400],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO test_drive_requests (\n  client_id,\n  showroom_id,\n  model_id,\n  customer_name,\n  customer_phone,\n  city,\n  preferred_date,\n  preferred_time,\n  status,\n  created_at\n) VALUES (\n  $1,\n  $2,\n  $3,\n  $4,\n  $5,\n  $6,\n  $7,\n  $8,\n  'pending',\n  NOW()\n)\nRETURNING id, status, created_at",
+        "options": {
+          "queryParams": "={{ $json.id }},={{ $('Find Showroom for Test Drive').first().json.id }},={{ $('Find Model for Test Drive').first().json.id }},={{ $('Webhook').first().json.body.args.customer_name }},={{ $('Webhook').first().json.body.args.customer_phone }},={{ $('Webhook').first().json.body.args.city }},={{ $('Webhook').first().json.body.args.preferred_date || null }},={{ $('Webhook').first().json.body.args.preferred_time || null }}"
+        }
+      },
+      "id": "postgres-insert-testdrive",
+      "name": "Insert Test Drive Request",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2020, 400],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/PLACEHOLDER/PLACEHOLDER/PLACEHOLDER",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"🏍️ New Test Drive Request\",\n        \"emoji\": true\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Customer:*\\n{{ $('Webhook').first().json.body.args.customer_name }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Phone:*\\n{{ $('Webhook').first().json.body.args.customer_phone }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Model:*\\n{{ $('Find Model for Test Drive').first().json.name }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*City:*\\n{{ $('Webhook').first().json.body.args.city }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Showroom:*\\n{{ $('Find Showroom for Test Drive').first().json.name }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Preferred Time:*\\n{{ $('Webhook').first().json.body.args.preferred_date || 'Any' }} {{ $('Webhook').first().json.body.args.preferred_time || '' }}\"\n        }\n      ]\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"📞 Please contact within 30 minutes | Booking ID: {{ $json.id }}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "http-slack-testdrive",
+      "name": "Slack Test Drive Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2240, 400],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhook = $('Webhook').first().json;\nconst args = webhook.body.args;\nconst showroom = $('Find Showroom for Test Drive').first().json;\nconst model = $('Find Model for Test Drive').first().json;\nconst booking = $('Insert Test Drive Request').first().json;\n\nreturn [{\n  json: {\n    response: `Excellent! I've booked your test drive for the ${model.name} at our ${showroom.name} showroom. Our team will call you at ${args.customer_phone} shortly to confirm the exact timing. Is there anything else you'd like to know about the ${model.name}?`,\n    data: {\n      booking_id: booking.id,\n      status: booking.status,\n      model: model.name,\n      showroom: showroom.name,\n      showroom_address: showroom.address,\n      showroom_phone: showroom.phone,\n      customer_name: args.customer_name,\n      customer_phone: args.customer_phone,\n      city: args.city\n    }\n  }\n}];"
+      },
+      "id": "code-testdrive-success",
+      "name": "Format Test Drive Success Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2460, 400]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    name,\n    category,\n    engine_cc,\n    mileage_kmpl,\n    top_speed_kmph,\n    kerb_weight_kg,\n    fuel_tank_litres,\n    ex_showroom_price_base\nFROM models\nWHERE LOWER(name) LIKE LOWER('%' || $1 || '%')\nAND is_active = true\nLIMIT 1",
+        "options": {
+          "queryParams": "={{ $json.body.args.model_name }}"
+        }
+      },
+      "id": "postgres-specs",
+      "name": "Get Specs Query",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 600],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const model = $input.first().json;\nconst args = $('Webhook').first().json.body.args;\n\nif (!model || !model.name) {\n  return [{\n    json: {\n      response: `Sorry, I couldn't find specifications for ${args.model_name}. Please check the model name.`\n    }\n  }];\n}\n\nlet response = `The ${model.name} is a ${model.category.toLowerCase()}. `;\n\nif (model.engine_cc) {\n  response += `It has a ${model.engine_cc}cc engine. `;\n}\nif (model.mileage_kmpl) {\n  response += `Mileage is ${model.mileage_kmpl} kmpl. `;\n}\nif (model.top_speed_kmph) {\n  response += `Top speed is ${model.top_speed_kmph} kmph. `;\n}\n\nconst price = new Intl.NumberFormat('en-IN').format(model.ex_showroom_price_base);\nresponse += `Starting price is ₹${price} ex-showroom. Would you like to know the on-road price in your city?`;\n\nreturn [{\n  json: { response }\n}];"
+      },
+      "id": "code-specs",
+      "name": "Format Specs Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 600]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "validate-escalate",
+              "leftValue": "={{ $json.body.args.reason }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-validate-escalate",
+      "name": "Validate Escalation Input",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [700, 700]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO callbacks (\n  customer_name,\n  customer_phone,\n  customer_city,\n  reason,\n  reason_category,\n  interested_model,\n  priority,\n  status,\n  source,\n  created_at\n) VALUES (\n  $1,\n  $2,\n  $3,\n  $4,\n  $5,\n  $6,\n  'high',\n  'pending',\n  'voice_ai',\n  NOW()\n)\nRETURNING id, status, created_at",
+        "options": {
+          "queryParams": "={{ $json.body.args.customer_name || 'Unknown' }},={{ $json.body.args.customer_phone || 'Unknown' }},={{ $json.body.args.city || 'Unknown' }},={{ $json.body.args.reason || 'Customer requested human agent' }},={{ $json.body.args.reason_category || 'human_request' }},={{ $json.body.args.model_name || '' }}"
+        }
+      },
+      "id": "postgres-escalate",
+      "name": "Insert Callback Request",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [920, 700],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/PLACEHOLDER/PLACEHOLDER/PLACEHOLDER",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"🚨 Human Callback Requested\",\n        \"emoji\": true\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Customer:*\\n{{ $('Webhook').first().json.body.args.customer_name || 'Unknown' }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Phone:*\\n{{ $('Webhook').first().json.body.args.customer_phone || 'Unknown' }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*City:*\\n{{ $('Webhook').first().json.body.args.city || 'Unknown' }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Reason:*\\n{{ $('Webhook').first().json.body.args.reason }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Category:*\\n{{ $('Webhook').first().json.body.args.reason_category || 'human_request' }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Interested Model:*\\n{{ $('Webhook').first().json.body.args.model_name || 'Not specified' }}\"\n        }\n      ]\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"⚡ HIGH PRIORITY - Please respond within 30 minutes | Callback ID: {{ $json.id }}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "http-slack-escalate",
+      "name": "Slack Escalation Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1140, 700],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhook = $('Webhook').first().json;\nconst args = webhook.body.args;\nconst callback = $('Insert Callback Request').first().json;\n\nreturn [{\n  json: {\n    response: `I understand you'd like to speak with someone from our team. I've noted your request and a TVS representative will call you back within 30 minutes. Is there anything else I can help with in the meantime?`,\n    data: {\n      callback_id: callback.id,\n      status: callback.status,\n      reason: args.reason,\n      reason_category: args.reason_category || 'human_request'\n    }\n  }\n}];"
+      },
+      "id": "code-escalate-success",
+      "name": "Format Escalation Success Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1360, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    response: `I understand you'd like to speak with someone from our team. Could you please tell me briefly what you need help with, and I'll make sure the right person calls you back?`\n  }\n}];"
+      },
+      "id": "code-escalate-no-reason",
+      "name": "Ask for Escalation Reason",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 800]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response",
+              "name": "response",
+              "type": "string",
+              "value": "I'm sorry, I didn't understand that. I can help you with prices, availability, showroom locations, test drives, or vehicle specifications. What would you like to know?"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-fallback",
+      "name": "Unknown Function",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [700, 900]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2700, 400]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Route by Function",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Function": {
+      "main": [
+        [{"node": "Get Price Query", "type": "main", "index": 0}],
+        [{"node": "Check Availability Query", "type": "main", "index": 0}],
+        [{"node": "Find Showroom Query", "type": "main", "index": 0}],
+        [{"node": "Validate Test Drive Input", "type": "main", "index": 0}],
+        [{"node": "Get Specs Query", "type": "main", "index": 0}],
+        [{"node": "Validate Escalation Input", "type": "main", "index": 0}],
+        [{"node": "Unknown Function", "type": "main", "index": 0}]
+      ]
+    },
+    "Get Price Query": {
+      "main": [[{"node": "Format Price Response", "type": "main", "index": 0}]]
+    },
+    "Format Price Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Check Availability Query": {
+      "main": [[{"node": "Format Availability Response", "type": "main", "index": 0}]]
+    },
+    "Format Availability Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Find Showroom Query": {
+      "main": [[{"node": "Format Showroom Response", "type": "main", "index": 0}]]
+    },
+    "Format Showroom Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Validate Test Drive Input": {
+      "main": [
+        [{"node": "Find Showroom for Test Drive", "type": "main", "index": 0}],
+        [{"node": "Missing Fields Response", "type": "main", "index": 0}]
+      ]
+    },
+    "Missing Fields Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Find Showroom for Test Drive": {
+      "main": [[{"node": "Check Showroom Found", "type": "main", "index": 0}]]
+    },
+    "Check Showroom Found": {
+      "main": [
+        [{"node": "Find Model for Test Drive", "type": "main", "index": 0}],
+        [{"node": "No Showroom Response", "type": "main", "index": 0}]
+      ]
+    },
+    "No Showroom Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Find Model for Test Drive": {
+      "main": [[{"node": "Check Model Found", "type": "main", "index": 0}]]
+    },
+    "Check Model Found": {
+      "main": [
+        [{"node": "Upsert Client", "type": "main", "index": 0}],
+        [{"node": "No Model Response", "type": "main", "index": 0}]
+      ]
+    },
+    "No Model Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Upsert Client": {
+      "main": [[{"node": "Insert Test Drive Request", "type": "main", "index": 0}]]
+    },
+    "Insert Test Drive Request": {
+      "main": [[{"node": "Slack Test Drive Notification", "type": "main", "index": 0}]]
+    },
+    "Slack Test Drive Notification": {
+      "main": [[{"node": "Format Test Drive Success Response", "type": "main", "index": 0}]]
+    },
+    "Format Test Drive Success Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Get Specs Query": {
+      "main": [[{"node": "Format Specs Response", "type": "main", "index": 0}]]
+    },
+    "Format Specs Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Validate Escalation Input": {
+      "main": [
+        [{"node": "Insert Callback Request", "type": "main", "index": 0}],
+        [{"node": "Ask for Escalation Reason", "type": "main", "index": 0}]
+      ]
+    },
+    "Insert Callback Request": {
+      "main": [[{"node": "Slack Escalation Notification", "type": "main", "index": 0}]]
+    },
+    "Slack Escalation Notification": {
+      "main": [[{"node": "Format Escalation Success Response", "type": "main", "index": 0}]]
+    },
+    "Format Escalation Success Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Ask for Escalation Reason": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Unknown Function": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-15T12:00:00.000Z",
+  "versionId": "2"
+}
