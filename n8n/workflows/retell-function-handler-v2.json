@@ -434,11 +434,11 @@
           "conditions": [
             {
               "id": "validate-escalate",
-              "leftValue": "={{ $json.body.args.reason }}",
-              "rightValue": "",
+              "leftValue": "={{ $json.body.args.customer_phone && $json.body.args.reason }}",
+              "rightValue": true,
               "operator": {
-                "type": "string",
-                "operation": "exists"
+                "type": "boolean",
+                "operation": "true"
               }
             }
           ],
@@ -454,17 +454,112 @@
     },
     {
       "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response",
+              "name": "response",
+              "type": "string",
+              "value": "I'd like to have our team call you back. Could you please share your phone number so they can reach you?"
+            },
+            {
+              "id": "error",
+              "name": "data.error",
+              "type": "string",
+              "value": "missing_phone_for_callback"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-missing-escalation-info",
+      "name": "Missing Escalation Info Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [920, 800]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "check-name",
+              "leftValue": "={{ $json.body.args.customer_name ? true : false }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-client-upsert-needed",
+      "name": "Check If Client Upsert Needed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [920, 700]
+    },
+    {
+      "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO callbacks (\n  customer_name,\n  customer_phone,\n  customer_city,\n  reason,\n  reason_category,\n  interested_model,\n  priority,\n  status,\n  source,\n  created_at\n) VALUES (\n  $1,\n  $2,\n  $3,\n  $4,\n  $5,\n  $6,\n  'high',\n  'pending',\n  'voice_ai',\n  NOW()\n)\nRETURNING id, status, created_at",
+        "query": "INSERT INTO clients (phone, name, city, source_channel, last_contact)\nVALUES (\n  $1,\n  $2,\n  $3,\n  'web_voice',\n  NOW()\n)\nON CONFLICT (phone) DO UPDATE SET\n  name = COALESCE(EXCLUDED.name, clients.name),\n  city = COALESCE(EXCLUDED.city, clients.city),\n  last_contact = NOW()\nRETURNING id",
         "options": {
-          "queryParams": "={{ $json.body.args.customer_name || 'Unknown' }},={{ $json.body.args.customer_phone || 'Unknown' }},={{ $json.body.args.city || 'Unknown' }},={{ $json.body.args.reason || 'Customer requested human agent' }},={{ $json.body.args.reason_category || 'human_request' }},={{ $json.body.args.model_name || '' }}"
+          "queryParams": "={{ $json.body.args.customer_phone }},={{ $json.body.args.customer_name }},={{ $json.body.args.city || null }}"
         }
       },
-      "id": "postgres-escalate",
-      "name": "Insert Callback Request",
+      "id": "postgres-upsert-client-escalate",
+      "name": "Upsert Client for Escalation",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [920, 700],
+      "position": [1140, 650],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO callbacks (\n  client_id,\n  customer_phone,\n  customer_name,\n  reason,\n  conversation_summary,\n  interested_model,\n  city,\n  priority,\n  callback_type,\n  status,\n  created_at\n) VALUES (\n  $1,\n  $2,\n  $3,\n  $4,\n  $5,\n  $6,\n  $7,\n  $8,\n  'human_request',\n  'pending',\n  NOW()\n)\nRETURNING id, priority, status",
+        "options": {
+          "queryParams": "={{ $('Upsert Client for Escalation').first()?.json?.id || null }},={{ $('Webhook').first().json.body.args.customer_phone }},={{ $('Webhook').first().json.body.args.customer_name || null }},={{ $('Webhook').first().json.body.args.reason }},={{ $('Webhook').first().json.body.args.conversation_summary || null }},={{ $('Webhook').first().json.body.args.interested_model || null }},={{ $('Webhook').first().json.body.args.city || null }},={{ $('Webhook').first().json.body.args.priority || 'normal' }}"
+        }
+      },
+      "id": "postgres-insert-callback-with-client",
+      "name": "Insert Callback With Client",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1360, 650],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO callbacks (\n  client_id,\n  customer_phone,\n  customer_name,\n  reason,\n  conversation_summary,\n  interested_model,\n  city,\n  priority,\n  callback_type,\n  status,\n  created_at\n) VALUES (\n  NULL,\n  $1,\n  NULL,\n  $2,\n  $3,\n  $4,\n  $5,\n  $6,\n  'human_request',\n  'pending',\n  NOW()\n)\nRETURNING id, priority, status",
+        "options": {
+          "queryParams": "={{ $('Webhook').first().json.body.args.customer_phone }},={{ $('Webhook').first().json.body.args.reason }},={{ $('Webhook').first().json.body.args.conversation_summary || null }},={{ $('Webhook').first().json.body.args.interested_model || null }},={{ $('Webhook').first().json.body.args.city || null }},={{ $('Webhook').first().json.body.args.priority || 'normal' }}"
+        }
+      },
+      "id": "postgres-insert-callback-no-client",
+      "name": "Insert Callback Without Client",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1140, 750],
       "credentials": {
         "postgres": {
           "id": "TVS-Supabase-DB",
@@ -487,35 +582,25 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"🚨 Human Callback Requested\",\n        \"emoji\": true\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Customer:*\\n{{ $('Webhook').first().json.body.args.customer_name || 'Unknown' }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Phone:*\\n{{ $('Webhook').first().json.body.args.customer_phone || 'Unknown' }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*City:*\\n{{ $('Webhook').first().json.body.args.city || 'Unknown' }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Reason:*\\n{{ $('Webhook').first().json.body.args.reason }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Category:*\\n{{ $('Webhook').first().json.body.args.reason_category || 'human_request' }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Interested Model:*\\n{{ $('Webhook').first().json.body.args.model_name || 'Not specified' }}\"\n        }\n      ]\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"⚡ HIGH PRIORITY - Please respond within 30 minutes | Callback ID: {{ $json.id }}\"\n        }\n      ]\n    }\n  ]\n}",
+        "jsonBody": "={\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"🚨 Escalation - Callback Required\",\n        \"emoji\": true\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Customer:*\\n{{ $('Webhook').first().json.body.args.customer_name || 'Not provided' }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Phone:*\\n{{ $('Webhook').first().json.body.args.customer_phone }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Reason:*\\n{{ $('Webhook').first().json.body.args.reason }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Priority:*\\n{{ $('Webhook').first().json.body.args.priority || 'normal' }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Model Interest:*\\n{{ $('Webhook').first().json.body.args.interested_model || 'Not specified' }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*City:*\\n{{ $('Webhook').first().json.body.args.city || 'Not specified' }}\"\n        }\n      ]\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Summary:*\\n{{ $('Webhook').first().json.body.args.conversation_summary || 'No summary provided' }}\"\n      }\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"⚡ Please call back within 30 minutes | Callback ID: {{ $json.id }}\"\n        }\n      ]\n    }\n  ]\n}",
         "options": {}
       },
       "id": "http-slack-escalate",
       "name": "Slack Escalation Notification",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1140, 700],
+      "position": [1580, 700],
       "continueOnFail": true
     },
     {
       "parameters": {
-        "jsCode": "const webhook = $('Webhook').first().json;\nconst args = webhook.body.args;\nconst callback = $('Insert Callback Request').first().json;\n\nreturn [{\n  json: {\n    response: `I understand you'd like to speak with someone from our team. I've noted your request and a TVS representative will call you back within 30 minutes. Is there anything else I can help with in the meantime?`,\n    data: {\n      callback_id: callback.id,\n      status: callback.status,\n      reason: args.reason,\n      reason_category: args.reason_category || 'human_request'\n    }\n  }\n}];"
+        "jsCode": "const webhook = $('Webhook').first().json;\nconst args = webhook.body.args;\n\n// Get callback data from either path\nlet callbackData;\ntry {\n  callbackData = $('Insert Callback With Client').first()?.json;\n} catch(e) {\n  callbackData = $('Insert Callback Without Client').first()?.json;\n}\n\nconst reason = args.reason || '';\nconst isFinanceRelated = reason.toLowerCase().includes('emi') || reason.toLowerCase().includes('finance') || reason.toLowerCase().includes('loan');\n\nlet helpText = 'your request';\nif (isFinanceRelated) {\n  helpText = 'all the financing options';\n}\n\nreturn [{\n  json: {\n    response: `I completely understand. I've flagged this for our team and they will call you back at ${args.customer_phone} within 30 minutes. They'll be able to help you with ${helpText}. Is there anything else I can help you with in the meantime?`,\n    data: {\n      callback_id: callbackData?.id,\n      status: 'pending',\n      priority: args.priority || 'normal',\n      estimated_callback: 'within 30 minutes',\n      customer_phone: args.customer_phone\n    }\n  }\n}];"
       },
       "id": "code-escalate-success",
-      "name": "Format Escalation Success Response",
+      "name": "Format Escalation Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1360, 700]
-    },
-    {
-      "parameters": {
-        "jsCode": "return [{\n  json: {\n    response: `I understand you'd like to speak with someone from our team. Could you please tell me briefly what you need help with, and I'll make sure the right person calls you back?`\n  }\n}];"
-      },
-      "id": "code-escalate-no-reason",
-      "name": "Ask for Escalation Reason",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [920, 800]
+      "position": [1800, 700]
     },
     {
       "parameters": {
@@ -644,20 +729,32 @@
     },
     "Validate Escalation Input": {
       "main": [
-        [{"node": "Insert Callback Request", "type": "main", "index": 0}],
-        [{"node": "Ask for Escalation Reason", "type": "main", "index": 0}]
+        [{"node": "Check If Client Upsert Needed", "type": "main", "index": 0}],
+        [{"node": "Missing Escalation Info Response", "type": "main", "index": 0}]
       ]
     },
-    "Insert Callback Request": {
+    "Missing Escalation Info Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Check If Client Upsert Needed": {
+      "main": [
+        [{"node": "Upsert Client for Escalation", "type": "main", "index": 0}],
+        [{"node": "Insert Callback Without Client", "type": "main", "index": 0}]
+      ]
+    },
+    "Upsert Client for Escalation": {
+      "main": [[{"node": "Insert Callback With Client", "type": "main", "index": 0}]]
+    },
+    "Insert Callback With Client": {
+      "main": [[{"node": "Slack Escalation Notification", "type": "main", "index": 0}]]
+    },
+    "Insert Callback Without Client": {
       "main": [[{"node": "Slack Escalation Notification", "type": "main", "index": 0}]]
     },
     "Slack Escalation Notification": {
-      "main": [[{"node": "Format Escalation Success Response", "type": "main", "index": 0}]]
+      "main": [[{"node": "Format Escalation Response", "type": "main", "index": 0}]]
     },
-    "Format Escalation Success Response": {
-      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
-    },
-    "Ask for Escalation Reason": {
+    "Format Escalation Response": {
       "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
     },
     "Unknown Function": {

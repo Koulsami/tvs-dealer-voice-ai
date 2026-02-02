@@ -73,11 +73,15 @@ Flow:
 Returns vehicle specifications.
 
 ### 6. escalate_to_human (Full Implementation)
+**Required fields:** customer_phone, reason
+**Optional fields:** customer_name, conversation_summary, interested_model, city, priority
+
 Flow:
-1. Validate reason exists
-2. Insert callback request
-3. Send Slack notification
-4. Return confirmation
+1. Validate required fields (customer_phone AND reason)
+2. Check if customer_name provided → Upsert client record (optional)
+3. Insert callback request with client_id (if available)
+4. Send Slack notification with all details
+5. Return personalized confirmation (finance-aware)
 
 ## Slack Webhook Setup
 
@@ -110,7 +114,7 @@ curl -X POST https://tvs-dealer-n8n-production.up.railway.app/webhook/retell-fun
   }'
 ```
 
-### Test escalate_to_human
+### Test escalate_to_human (with customer name)
 ```bash
 curl -X POST https://tvs-dealer-n8n-production.up.railway.app/webhook/retell-function \
   -H "Content-Type: application/json" \
@@ -123,8 +127,25 @@ curl -X POST https://tvs-dealer-n8n-production.up.railway.app/webhook/retell-fun
         "customer_phone": "+919876543210",
         "city": "Mumbai",
         "reason": "Want to discuss EMI options",
-        "reason_category": "finance_inquiry",
-        "model_name": "Apache RTR 160"
+        "interested_model": "Apache RTR 160",
+        "conversation_summary": "Customer inquired about Apache RTR 160 pricing and wants detailed EMI information",
+        "priority": "normal"
+      }
+    }
+  }'
+```
+
+### Test escalate_to_human (minimal - no customer name)
+```bash
+curl -X POST https://tvs-dealer-n8n-production.up.railway.app/webhook/retell-function \
+  -H "Content-Type: application/json" \
+  -d '{
+    "call_id": "test_003",
+    "body": {
+      "name": "escalate_to_human",
+      "args": {
+        "customer_phone": "+919876543210",
+        "reason": "Customer wants to speak with a manager"
       }
     }
   }'
@@ -168,15 +189,16 @@ CREATE TABLE test_drive_requests (
 ```sql
 CREATE TABLE callbacks (
   id SERIAL PRIMARY KEY,
+  client_id INTEGER REFERENCES clients(id),
   customer_name VARCHAR(255),
-  customer_phone VARCHAR(20),
-  customer_city VARCHAR(100),
-  reason TEXT,
-  reason_category VARCHAR(50),
+  customer_phone VARCHAR(20) NOT NULL,
+  reason VARCHAR(200) NOT NULL,
+  conversation_summary TEXT,
   interested_model VARCHAR(100),
-  priority VARCHAR(20) DEFAULT 'medium',
+  city VARCHAR(100),
+  priority VARCHAR(20) DEFAULT 'normal',
+  callback_type VARCHAR(30),
   status VARCHAR(20) DEFAULT 'pending',
-  source VARCHAR(50),
   created_at TIMESTAMP DEFAULT NOW()
 );
 ```
