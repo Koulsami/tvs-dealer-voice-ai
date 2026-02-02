@@ -1,0 +1,342 @@
+{
+  "name": "Retell Function Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "retell-function",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "retell-function"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "value": "get_on_road_price",
+              "outputKey": "get_on_road_price"
+            },
+            {
+              "value": "check_availability",
+              "outputKey": "check_availability"
+            },
+            {
+              "value": "find_nearest_showroom",
+              "outputKey": "find_nearest_showroom"
+            },
+            {
+              "value": "book_test_drive",
+              "outputKey": "book_test_drive"
+            },
+            {
+              "value": "get_model_specs",
+              "outputKey": "get_model_specs"
+            },
+            {
+              "value": "escalate_to_human",
+              "outputKey": "escalate_to_human"
+            }
+          ],
+          "fallbackOutput": "fallback"
+        },
+        "options": {},
+        "value": "={{ $json.function_name }}"
+      },
+      "id": "switch-1",
+      "name": "Route by Function",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    s.name as showroom_name,\n    s.area,\n    s.phone,\n    m.name as model_name,\n    sp.ex_showroom_price,\n    sp.rto_charges,\n    sp.insurance_1yr,\n    sp.handling_charges,\n    sp.on_road_price\nFROM showroom_pricing sp\nJOIN showrooms s ON sp.showroom_id = s.id\nJOIN models m ON sp.model_id = m.id\nWHERE LOWER(m.name) LIKE LOWER('%' || $1 || '%')\nAND LOWER(s.city) = LOWER($2)\nAND s.is_active = true\nORDER BY sp.on_road_price ASC\nLIMIT 1",
+        "options": {
+          "queryParams": "={{ $json.arguments.model_name }},{{ $json.arguments.city }}"
+        }
+      },
+      "id": "postgres-price",
+      "name": "Get Price Query",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 100],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst args = $('Webhook').first().json.arguments;\n\nif (!data || !data.model_name) {\n  return [{\n    json: {\n      response: `Sorry, I couldn't find pricing for ${args.model_name} in ${args.city}. Please check the model name or city.`\n    }\n  }];\n}\n\nconst price = new Intl.NumberFormat('en-IN').format(data.on_road_price);\nconst exShowroom = new Intl.NumberFormat('en-IN').format(data.ex_showroom_price);\nconst rto = new Intl.NumberFormat('en-IN').format(data.rto_charges);\nconst insurance = new Intl.NumberFormat('en-IN').format(data.insurance_1yr);\n\nreturn [{\n  json: {\n    response: `The on-road price for ${data.model_name} in ${args.city} is ₹${price}. This includes ex-showroom ₹${exShowroom}, RTO ₹${rto}, and insurance ₹${insurance}. Available at ${data.showroom_name}, ${data.area}. Would you like to book a test drive?`\n  }\n}];"
+      },
+      "id": "code-price",
+      "name": "Format Price Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 100]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    s.name as showroom_name,\n    s.area,\n    s.phone,\n    m.name as model_name,\n    c.display_name as color_name,\n    i.quantity_available\nFROM inventory i\nJOIN showrooms s ON i.showroom_id = s.id\nJOIN models m ON i.model_id = m.id\nJOIN colors c ON i.color_id = c.id\nWHERE LOWER(m.name) LIKE LOWER('%' || $1 || '%')\nAND LOWER(s.city) = LOWER($2)\nAND ($3 = '' OR LOWER(c.name) LIKE LOWER('%' || $3 || '%'))\nAND s.is_active = true\nORDER BY i.quantity_available DESC\nLIMIT 5",
+        "options": {
+          "queryParams": "={{ $json.arguments.model_name }},{{ $json.arguments.city }},={{ $json.arguments.color || '' }}"
+        }
+      },
+      "id": "postgres-availability",
+      "name": "Check Availability Query",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 200],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map(i => i.json);\nconst args = $('Webhook').first().json.arguments;\n\nif (!items || items.length === 0) {\n  return [{\n    json: {\n      response: `Sorry, I couldn't find ${args.model_name} in ${args.city}. Please check the model name.`\n    }\n  }];\n}\n\nconst inStock = items.filter(i => i.quantity_available > 0);\n\nif (inStock.length > 0) {\n  const best = inStock[0];\n  return [{\n    json: {\n      response: `Yes! The ${best.model_name} in ${best.color_name} is available at ${best.showroom_name}, ${best.area}. We have ${best.quantity_available} unit${best.quantity_available > 1 ? 's' : ''} in stock. Would you like to book a test drive?`\n    }\n  }];\n} else {\n  const item = items[0];\n  return [{\n    json: {\n      response: `Sorry, the ${item.model_name} in ${item.color_name} is currently out of stock at ${item.showroom_name}. Would you like me to check other colors or nearby showrooms?`\n    }\n  }];\n}"
+      },
+      "id": "code-availability",
+      "name": "Format Availability Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 200]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    name,\n    area,\n    address,\n    phone,\n    operating_hours\nFROM showrooms\nWHERE LOWER(city) = LOWER($1)\nAND is_active = true\nORDER BY name\nLIMIT 5",
+        "options": {
+          "queryParams": "={{ $json.arguments.city }}"
+        }
+      },
+      "id": "postgres-showroom",
+      "name": "Find Showroom Query",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 300],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const showrooms = $input.all().map(i => i.json);\nconst args = $('Webhook').first().json.arguments;\n\nif (!showrooms || showrooms.length === 0) {\n  return [{\n    json: {\n      response: `Sorry, we don't have any showrooms in ${args.city} yet. We have showrooms in Bangalore, Mumbai, Chennai, Delhi, and Hyderabad.`\n    }\n  }];\n}\n\nconst first = showrooms[0];\nlet response = `We have ${showrooms.length} TVS showroom${showrooms.length > 1 ? 's' : ''} in ${args.city}. `;\nresponse += `The nearest one is ${first.name} in ${first.area}. `;\nresponse += `Phone: ${first.phone}. Open ${first.operating_hours}. `;\nresponse += `Would you like directions or want to book a visit?`;\n\nreturn [{\n  json: { response }\n}];"
+      },
+      "id": "code-showroom",
+      "name": "Format Showroom Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO test_drive_requests (\n    customer_name,\n    customer_phone,\n    customer_city,\n    model_id,\n    showroom_id,\n    preferred_date,\n    preferred_time,\n    source,\n    status\n)\nSELECT \n    $1,\n    $2,\n    $3,\n    m.id,\n    s.id,\n    COALESCE(NULLIF($4, '')::date, CURRENT_DATE + 1),\n    COALESCE(NULLIF($5, ''), 'morning'),\n    'voice_ai',\n    'pending'\nFROM models m\nCROSS JOIN showrooms s\nWHERE LOWER(m.name) LIKE LOWER('%' || $6 || '%')\nAND LOWER(s.city) = LOWER($3)\nAND s.is_active = true\nLIMIT 1\nRETURNING id",
+        "options": {
+          "queryParams": "={{ $json.arguments.customer_name }},={{ $json.arguments.customer_phone }},={{ $json.arguments.city }},={{ $json.arguments.preferred_date || '' }},={{ $json.arguments.preferred_time || '' }},={{ $json.arguments.model_name }}"
+        }
+      },
+      "id": "postgres-testdrive",
+      "name": "Book Test Drive Query",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 400],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\nconst args = $('Webhook').first().json.arguments;\n\nif (!result || !result.id) {\n  return [{\n    json: {\n      response: `Sorry, I couldn't complete the booking. Please try again or visit our showroom directly.`\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    response: `Excellent! I've booked your test drive for the ${args.model_name}. ${args.customer_name}, you'll receive a confirmation call at ${args.customer_phone} shortly. Is there anything else I can help you with?`\n  }\n}];"
+      },
+      "id": "code-testdrive",
+      "name": "Format Booking Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 400]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    name,\n    category,\n    engine_cc,\n    mileage_kmpl,\n    top_speed_kmph,\n    kerb_weight_kg,\n    fuel_tank_litres,\n    ex_showroom_price_base\nFROM models\nWHERE LOWER(name) LIKE LOWER('%' || $1 || '%')\nAND is_active = true\nLIMIT 1",
+        "options": {
+          "queryParams": "={{ $json.arguments.model_name }}"
+        }
+      },
+      "id": "postgres-specs",
+      "name": "Get Specs Query",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 500],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const model = $input.first().json;\nconst args = $('Webhook').first().json.arguments;\n\nif (!model || !model.name) {\n  return [{\n    json: {\n      response: `Sorry, I couldn't find specifications for ${args.model_name}. Please check the model name.`\n    }\n  }];\n}\n\nlet response = `The ${model.name} is a ${model.category.toLowerCase()}. `;\n\nif (model.engine_cc) {\n  response += `It has a ${model.engine_cc}cc engine. `;\n}\nif (model.mileage_kmpl) {\n  response += `Mileage is ${model.mileage_kmpl} kmpl. `;\n}\nif (model.top_speed_kmph) {\n  response += `Top speed is ${model.top_speed_kmph} kmph. `;\n}\n\nconst price = new Intl.NumberFormat('en-IN').format(model.ex_showroom_price_base);\nresponse += `Starting price is ₹${price} ex-showroom. Would you like to know the on-road price in your city?`;\n\nreturn [{\n  json: { response }\n}];"
+      },
+      "id": "code-specs",
+      "name": "Format Specs Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 500]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO callbacks (\n    customer_name,\n    customer_phone,\n    customer_city,\n    reason,\n    reason_category,\n    interested_model,\n    priority,\n    status,\n    source\n) VALUES (\n    $1,\n    $2,\n    $3,\n    $4,\n    $5,\n    $6,\n    'high',\n    'pending',\n    'voice_ai'\n)\nRETURNING id",
+        "options": {
+          "queryParams": "={{ $json.arguments.customer_name || 'Unknown' }},={{ $json.arguments.customer_phone || 'Unknown' }},={{ $json.arguments.city || 'Unknown' }},={{ $json.arguments.reason || 'Customer requested human agent' }},={{ $json.arguments.reason_category || 'human_request' }},={{ $json.arguments.model_name || '' }}"
+        }
+      },
+      "id": "postgres-escalate",
+      "name": "Escalate Query",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 600],
+      "credentials": {
+        "postgres": {
+          "id": "TVS-Supabase-DB",
+          "name": "TVS Supabase DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\n\nreturn [{\n  json: {\n    response: `I understand you'd like to speak with someone from our team. I've noted your request and a TVS representative will call you back within 30 minutes. Is there anything else I can help with in the meantime?`\n  }\n}];"
+      },
+      "id": "code-escalate",
+      "name": "Format Escalation Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 600]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response",
+              "name": "response",
+              "type": "string",
+              "value": "I'm sorry, I didn't understand that. I can help you with prices, availability, showroom locations, test drives, or vehicle specifications. What would you like to know?"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-fallback",
+      "name": "Unknown Function",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [700, 700]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1150, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Route by Function",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Function": {
+      "main": [
+        [{"node": "Get Price Query", "type": "main", "index": 0}],
+        [{"node": "Check Availability Query", "type": "main", "index": 0}],
+        [{"node": "Find Showroom Query", "type": "main", "index": 0}],
+        [{"node": "Book Test Drive Query", "type": "main", "index": 0}],
+        [{"node": "Get Specs Query", "type": "main", "index": 0}],
+        [{"node": "Escalate Query", "type": "main", "index": 0}],
+        [{"node": "Unknown Function", "type": "main", "index": 0}]
+      ]
+    },
+    "Get Price Query": {
+      "main": [[{"node": "Format Price Response", "type": "main", "index": 0}]]
+    },
+    "Format Price Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Check Availability Query": {
+      "main": [[{"node": "Format Availability Response", "type": "main", "index": 0}]]
+    },
+    "Format Availability Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Find Showroom Query": {
+      "main": [[{"node": "Format Showroom Response", "type": "main", "index": 0}]]
+    },
+    "Format Showroom Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Book Test Drive Query": {
+      "main": [[{"node": "Format Booking Response", "type": "main", "index": 0}]]
+    },
+    "Format Booking Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Get Specs Query": {
+      "main": [[{"node": "Format Specs Response", "type": "main", "index": 0}]]
+    },
+    "Format Specs Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Escalate Query": {
+      "main": [[{"node": "Format Escalation Response", "type": "main", "index": 0}]]
+    },
+    "Format Escalation Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Unknown Function": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-15T10:00:00.000Z",
+  "versionId": "1"
+}

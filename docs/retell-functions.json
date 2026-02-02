@@ -1,0 +1,142 @@
+{
+  "functions": [
+    {
+      "name": "get_on_road_price",
+      "description": "Get the complete on-road price for a TVS motorcycle or scooter in a specific city including all taxes and charges",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "model_name": {
+            "type": "string",
+            "description": "Name of the TVS model (e.g., 'Apache RTR 160', 'Jupiter', 'Ntorq 125', 'iQube')"
+          },
+          "city": {
+            "type": "string",
+            "description": "City name (Bangalore, Mumbai, Chennai, Delhi, or Hyderabad)"
+          }
+        },
+        "required": ["model_name", "city"]
+      }
+    },
+    {
+      "name": "check_availability",
+      "description": "Check if a specific TVS model and color combination is available in stock at showrooms in a city",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "model_name": {
+            "type": "string",
+            "description": "Name of the TVS model"
+          },
+          "city": {
+            "type": "string",
+            "description": "City name"
+          },
+          "color": {
+            "type": "string",
+            "description": "Preferred color (red, black, blue, white, grey, etc.) - optional"
+          }
+        },
+        "required": ["model_name", "city"]
+      }
+    },
+    {
+      "name": "find_nearest_showroom",
+      "description": "Find TVS showrooms in a specific city with address and contact details",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "description": "City name"
+          }
+        },
+        "required": ["city"]
+      }
+    },
+    {
+      "name": "book_test_drive",
+      "description": "Book a test drive appointment for a customer to try a TVS vehicle",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customer_name": {
+            "type": "string",
+            "description": "Customer's full name"
+          },
+          "customer_phone": {
+            "type": "string",
+            "description": "Customer's phone number with country code"
+          },
+          "city": {
+            "type": "string",
+            "description": "City for the test drive"
+          },
+          "model_name": {
+            "type": "string",
+            "description": "Model the customer wants to test ride"
+          },
+          "preferred_date": {
+            "type": "string",
+            "description": "Preferred date in YYYY-MM-DD format (optional)"
+          },
+          "preferred_time": {
+            "type": "string",
+            "description": "Preferred time - morning, afternoon, or evening (optional)"
+          }
+        },
+        "required": ["customer_name", "customer_phone", "city", "model_name"]
+      }
+    },
+    {
+      "name": "get_model_specs",
+      "description": "Get detailed specifications of a TVS motorcycle or scooter including engine, mileage, and features",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "model_name": {
+            "type": "string",
+            "description": "Name of the TVS model"
+          }
+        },
+        "required": ["model_name"]
+      }
+    },
+    {
+      "name": "escalate_to_human",
+      "description": "Transfer the conversation to a human agent for complex queries like finance, exchange, complaints, or when customer explicitly requests",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customer_name": {
+            "type": "string",
+            "description": "Customer's name if available"
+          },
+          "customer_phone": {
+            "type": "string",
+            "description": "Customer's phone number if available"
+          },
+          "city": {
+            "type": "string",
+            "description": "Customer's city"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for escalation"
+          },
+          "reason_category": {
+            "type": "string",
+            "enum": ["human_request", "complex_query", "complaint", "finance_inquiry", "exchange_offer", "price_negotiation"],
+            "description": "Category of escalation"
+          },
+          "model_name": {
+            "type": "string",
+            "description": "Model customer is interested in (if any)"
+          }
+        },
+        "required": ["reason"]
+      }
+    }
+  ],
+  "webhook_url": "https://tvs-dealer-n8n-production.up.railway.app/webhook/retell-function"
+}
