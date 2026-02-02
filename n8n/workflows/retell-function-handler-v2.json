@@ -396,13 +396,13 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \n    name,\n    category,\n    engine_cc,\n    mileage_kmpl,\n    top_speed_kmph,\n    kerb_weight_kg,\n    fuel_tank_litres,\n    ex_showroom_price_base\nFROM models\nWHERE LOWER(name) LIKE LOWER('%' || $1 || '%')\nAND is_active = true\nLIMIT 1",
+        "query": "SELECT \n    name,\n    category,\n    engine_cc,\n    mileage_kmpl,\n    top_speed_kmph,\n    kerb_weight_kg,\n    fuel_tank_litres,\n    description,\n    features\nFROM models\nWHERE LOWER(name) LIKE LOWER('%' || $1 || '%')\nAND is_active = true\nLIMIT 1",
         "options": {
           "queryParams": "={{ $json.body.args.model_name }}"
         }
       },
       "id": "postgres-specs",
-      "name": "Get Specs Query",
+      "name": "Get Model Specs",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [700, 600],
@@ -415,13 +415,74 @@
     },
     {
       "parameters": {
-        "jsCode": "const model = $input.first().json;\nconst args = $('Webhook').first().json.body.args;\n\nif (!model || !model.name) {\n  return [{\n    json: {\n      response: `Sorry, I couldn't find specifications for ${args.model_name}. Please check the model name.`\n    }\n  }];\n}\n\nlet response = `The ${model.name} is a ${model.category.toLowerCase()}. `;\n\nif (model.engine_cc) {\n  response += `It has a ${model.engine_cc}cc engine. `;\n}\nif (model.mileage_kmpl) {\n  response += `Mileage is ${model.mileage_kmpl} kmpl. `;\n}\nif (model.top_speed_kmph) {\n  response += `Top speed is ${model.top_speed_kmph} kmph. `;\n}\n\nconst price = new Intl.NumberFormat('en-IN').format(model.ex_showroom_price_base);\nresponse += `Starting price is ₹${price} ex-showroom. Would you like to know the on-road price in your city?`;\n\nreturn [{\n  json: { response }\n}];"
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "check-specs-model",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
       },
-      "id": "code-specs",
+      "id": "if-specs-model-found",
+      "name": "Check Specs Model Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [920, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "const model = $('Get Model Specs').first().json;\n\nconst response = `The ${model.name} is a ${model.category.toLowerCase()} with a ${model.engine_cc}cc engine. It delivers a mileage of ${model.mileage_kmpl} km per litre and has a top speed of ${model.top_speed_kmph} kmph. The fuel tank capacity is ${model.fuel_tank_litres} litres and it weighs ${model.kerb_weight_kg} kg. Would you like to know the price or check availability?`;\n\nreturn [{\n  json: {\n    response: response,\n    data: {\n      model: model.name,\n      category: model.category,\n      engine_cc: model.engine_cc,\n      mileage_kmpl: model.mileage_kmpl,\n      top_speed_kmph: model.top_speed_kmph,\n      kerb_weight_kg: model.kerb_weight_kg,\n      fuel_tank_litres: model.fuel_tank_litres,\n      description: model.description || null,\n      features: model.features || null\n    }\n  }\n}];"
+      },
+      "id": "code-specs-found",
       "name": "Format Specs Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [920, 600]
+      "position": [1140, 550]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response",
+              "name": "response",
+              "type": "string",
+              "value": "I couldn't find specifications for that model. We have Apache RTR 160, Apache RTR 200, Jupiter, Ntorq 125, Raider 125, and iQube Electric. Which one would you like to know about?"
+            },
+            {
+              "id": "error",
+              "name": "data.error",
+              "type": "string",
+              "value": "model_not_found"
+            },
+            {
+              "id": "available",
+              "name": "data.available_models",
+              "type": "array",
+              "value": "[\"Apache RTR 160\", \"Apache RTR 200\", \"Jupiter\", \"Ntorq 125\", \"Raider 125\", \"iQube\"]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-specs-not-found",
+      "name": "Model Not Found for Specs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1140, 650]
     },
     {
       "parameters": {
@@ -653,7 +714,7 @@
         [{"node": "Check Availability Query", "type": "main", "index": 0}],
         [{"node": "Find Showroom Query", "type": "main", "index": 0}],
         [{"node": "Validate Test Drive Input", "type": "main", "index": 0}],
-        [{"node": "Get Specs Query", "type": "main", "index": 0}],
+        [{"node": "Get Model Specs", "type": "main", "index": 0}],
         [{"node": "Validate Escalation Input", "type": "main", "index": 0}],
         [{"node": "Unknown Function", "type": "main", "index": 0}]
       ]
@@ -721,10 +782,19 @@
     "Format Test Drive Success Response": {
       "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
     },
-    "Get Specs Query": {
-      "main": [[{"node": "Format Specs Response", "type": "main", "index": 0}]]
+    "Get Model Specs": {
+      "main": [[{"node": "Check Specs Model Found", "type": "main", "index": 0}]]
+    },
+    "Check Specs Model Found": {
+      "main": [
+        [{"node": "Format Specs Response", "type": "main", "index": 0}],
+        [{"node": "Model Not Found for Specs", "type": "main", "index": 0}]
+      ]
     },
     "Format Specs Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    },
+    "Model Not Found for Specs": {
       "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
     },
     "Validate Escalation Input": {

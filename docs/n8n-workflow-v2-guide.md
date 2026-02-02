@@ -69,8 +69,14 @@ Flow:
 6. Send Slack notification
 7. Return confirmation
 
-### 5. get_model_specs
-Returns vehicle specifications.
+### 5. get_model_specs (Full Implementation)
+Returns vehicle specifications with structured data.
+
+Flow:
+1. Query model specifications from database
+2. Check if model was found
+3. If found: Return detailed specs (engine, mileage, speed, weight, fuel tank)
+4. If not found: Return available models list
 
 ### 6. escalate_to_human (Full Implementation)
 **Required fields:** customer_phone, reason
@@ -151,6 +157,59 @@ curl -X POST https://tvs-dealer-n8n-production.up.railway.app/webhook/retell-fun
   }'
 ```
 
+### Test get_model_specs
+```bash
+curl -X POST https://tvs-dealer-n8n-production.up.railway.app/webhook/retell-function \
+  -H "Content-Type: application/json" \
+  -d '{
+    "call_id": "test_specs_001",
+    "body": {
+      "name": "get_model_specs",
+      "args": {
+        "model_name": "Apache RTR 160"
+      }
+    }
+  }'
+```
+
+### Test book_test_drive - Missing Phone
+```bash
+curl -X POST https://tvs-dealer-n8n-production.up.railway.app/webhook/retell-function \
+  -H "Content-Type: application/json" \
+  -d '{
+    "call_id": "test_book_nophone_002",
+    "body": {
+      "name": "book_test_drive",
+      "args": {
+        "model_name": "Apache",
+        "city": "Bangalore",
+        "customer_name": "Test No Phone"
+      }
+    }
+  }'
+```
+
+### Test escalate_to_human - Full Details (High Priority)
+```bash
+curl -X POST https://tvs-dealer-n8n-production.up.railway.app/webhook/retell-function \
+  -H "Content-Type: application/json" \
+  -d '{
+    "call_id": "test_escalate_full_001",
+    "body": {
+      "name": "escalate_to_human",
+      "args": {
+        "reason": "Customer wants EMI details",
+        "customer_phone": "+919876543211",
+        "customer_name": "EMI Query User",
+        "conversation_summary": "Interested in Apache RTR 160, asking about finance options",
+        "interested_model": "Apache RTR 160",
+        "city": "Bangalore",
+        "priority": "high"
+      }
+    }
+  }'
+```
+
 ## Database Tables Required
 
 Ensure these tables exist in Supabase:
@@ -201,4 +260,38 @@ CREATE TABLE callbacks (
   status VARCHAR(20) DEFAULT 'pending',
   created_at TIMESTAMP DEFAULT NOW()
 );
+```
+
+## Definition of Done
+
+- [ ] Switch node has cases for: `book_test_drive`, `escalate_to_human`, `get_model_specs`
+- [ ] All validation nodes correctly reject incomplete requests
+- [ ] Database records created in: `clients`, `test_drive_requests`, `callbacks`
+- [ ] Slack nodes configured (with placeholder URLs, continueOnFail=true)
+- [ ] All response formats match: `{ "response": "...", "data": {...} }`
+- [ ] All test payloads return expected responses
+- [ ] No n8n execution errors in history
+
+## Response Format
+
+All functions return responses in this format:
+```json
+{
+  "response": "Human-readable message for voice AI",
+  "data": {
+    "key": "value",
+    "...": "..."
+  }
+}
+```
+
+On errors:
+```json
+{
+  "response": "User-friendly error message",
+  "data": {
+    "error": "error_code",
+    "...": "additional context"
+  }
+}
 ```
