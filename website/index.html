@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TVS Motor Company - Experience the Thrill</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Retell AI SDK -->
+  <script src="https://cdn.retellai.com/create-web-call.js"></script>
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏍️</text></svg>">
+
+  <style>
+    .bg-tvs-red { background-color: #E31837; }
+    .text-tvs-red { color: #E31837; }
+    .border-tvs-red { border-color: #E31837; }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <!-- Header -->
+  <header class="bg-white shadow-sm sticky top-0 z-50">
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo -->
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🏍️</span>
+          <span class="text-xl font-bold text-gray-900">TVS</span>
+          <span class="text-xs bg-tvs-red text-white px-2 py-0.5 rounded-full ml-2">DEMO</span>
+        </div>
+
+        <!-- Navigation -->
+        <div class="hidden md:flex items-center gap-8">
+          <a href="#products" class="text-gray-700 hover:text-tvs-red transition-colors">Products</a>
+          <a href="#features" class="text-gray-700 hover:text-tvs-red transition-colors">Features</a>
+          <a href="admin.html" class="text-gray-700 hover:text-tvs-red transition-colors">Admin Panel</a>
+          <button onclick="toggleVoiceCall()" class="bg-tvs-red text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+            </svg>
+            Talk to Ria
+          </button>
+        </div>
+
+        <!-- Mobile menu button -->
+        <button class="md:hidden p-2" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mobile menu -->
+      <div id="mobile-menu" class="hidden md:hidden pb-4">
+        <a href="#products" class="block py-2 text-gray-700">Products</a>
+        <a href="#features" class="block py-2 text-gray-700">Features</a>
+        <a href="admin.html" class="block py-2 text-gray-700">Admin Panel</a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-gradient text-white py-20 lg:py-32">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center">
+        <h1 class="text-4xl md:text-6xl font-bold mb-6">
+          Experience the <span class="text-red-400">Thrill</span> of TVS
+        </h1>
+        <p class="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto">
+          Talk to our AI Assistant Ria for instant help with prices, availability, test drives, and more!
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="#products" class="bg-tvs-red text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-red-700 transition-colors inline-flex items-center justify-center gap-2">
+            Explore Models
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </a>
+          <button onclick="toggleVoiceCall()" class="bg-white text-gray-900 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center gap-2">
+            <svg class="w-5 h-5 text-tvs-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+            </svg>
+            Talk to Ria
+          </button>
+        </div>
+
+        <!-- Quick stats -->
+        <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div>
+            <div class="text-3xl md:text-4xl font-bold">8+</div>
+            <div class="text-gray-400">Models</div>
+          </div>
+          <div>
+            <div class="text-3xl md:text-4xl font-bold">12+</div>
+            <div class="text-gray-400">Showrooms</div>
+          </div>
+          <div>
+            <div class="text-3xl md:text-4xl font-bold">5</div>
+            <div class="text-gray-400">Cities</div>
+          </div>
+          <div>
+            <div class="text-3xl md:text-4xl font-bold">24/7</div>
+            <div class="text-gray-400">AI Support</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Product Grid Section -->
+  <section id="products" class="py-16 lg:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Our Lineup</h2>
+        <p class="text-gray-600 max-w-2xl mx-auto">
+          From sporty Apaches to stylish Jupiters - find your perfect ride. Ask Ria about any model!
+        </p>
+      </div>
+
+      <!-- Product Grid -->
+      <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Products will be loaded here via JavaScript -->
+        <div class="col-span-full flex justify-center items-center py-12">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-tvs-red"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="py-16 lg:py-24 bg-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Ask Ria Anything</h2>
+        <p class="text-gray-600 max-w-2xl mx-auto">
+          Our AI assistant can help you with all your queries instantly
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Feature 1 -->
+        <div class="feature-card bg-white p-6 rounded-xl shadow-lg">
+          <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-tvs-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Get Prices</h3>
+          <p class="text-gray-600 mb-4">"What's the on-road price of Apache RTR 160 in Bangalore?"</p>
+          <button onclick="toggleVoiceCall()" class="text-tvs-red font-semibold hover:underline">Ask now →</button>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card bg-white p-6 rounded-xl shadow-lg">
+          <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Check Availability</h3>
+          <p class="text-gray-600 mb-4">"Is Jupiter available in blue color in Mumbai?"</p>
+          <button onclick="toggleVoiceCall()" class="text-tvs-red font-semibold hover:underline">Ask now →</button>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card bg-white p-6 rounded-xl shadow-lg">
+          <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Book Test Drive</h3>
+          <p class="text-gray-600 mb-4">"I want to test ride the Ntorq 125 this weekend"</p>
+          <button onclick="toggleVoiceCall()" class="text-tvs-red font-semibold hover:underline">Book now →</button>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-card bg-white p-6 rounded-xl shadow-lg">
+          <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Find Showrooms</h3>
+          <p class="text-gray-600 mb-4">"Where is the nearest TVS showroom in Delhi?"</p>
+          <button onclick="toggleVoiceCall()" class="text-tvs-red font-semibold hover:underline">Find now →</button>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-card bg-white p-6 rounded-xl shadow-lg">
+          <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Get Specs</h3>
+          <p class="text-gray-600 mb-4">"What's the mileage of iQube electric scooter?"</p>
+          <button onclick="toggleVoiceCall()" class="text-tvs-red font-semibold hover:underline">Ask now →</button>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-card bg-white p-6 rounded-xl shadow-lg">
+          <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Current Offers</h3>
+          <p class="text-gray-600 mb-4">"Do you have any discounts or offers right now?"</p>
+          <button onclick="toggleVoiceCall()" class="text-tvs-red font-semibold hover:underline">Check now →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-16 lg:py-24 bg-tvs-red text-white">
+    <div class="max-w-4xl mx-auto px-4 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">Ready to Start Your Journey?</h2>
+      <p class="text-xl mb-8 opacity-90">Talk to Ria now and get all your questions answered instantly!</p>
+      <button onclick="toggleVoiceCall()" class="bg-white text-tvs-red px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center gap-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+        </svg>
+        Start Talking to Ria
+      </button>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-white py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="text-2xl">🏍️</span>
+            <span class="text-xl font-bold">TVS Motor</span>
+          </div>
+          <p class="text-gray-400">Experience the thrill of TVS motorcycles and scooters. Quality, performance, and innovation.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4">Quick Links</h4>
+          <ul class="space-y-2 text-gray-400">
+            <li><a href="#products" class="hover:text-white transition-colors">Products</a></li>
+            <li><a href="#features" class="hover:text-white transition-colors">AI Assistant</a></li>
+            <li><a href="admin.html" class="hover:text-white transition-colors">Admin Panel</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4">Demo Info</h4>
+          <p class="text-gray-400 text-sm">
+            This is a demonstration website for the TVS Dealer Voice AI Platform.
+            The AI assistant (Ria) is powered by Retell AI and connected to a real database.
+          </p>
+        </div>
+      </div>
+      <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
+        <p>© 2024 TVS Motor Company - Demo Site | Powered by Retell AI & Supabase</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Voice Widget -->
+  <div id="voice-widget" class="idle">
+    <div id="pulse-ring" class="hidden text-green-500"></div>
+    <button id="voice-widget-btn" onclick="toggleVoiceCall()" class="bg-tvs-red">
+      <span id="widget-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+        </svg>
+      </span>
+      <span id="widget-text">Talk to Us</span>
+    </button>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/supabase.js"></script>
+  <script src="js/retell.js"></script>
+  <script src="js/products.js"></script>
+
+</body>
+</html>
