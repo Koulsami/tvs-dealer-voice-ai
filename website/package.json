@@ -1,0 +1,12 @@
+{
+  "name": "tvs-demo-website",
+  "version": "1.0.0",
+  "description": "TVS Dealer Voice AI Demo Website",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
