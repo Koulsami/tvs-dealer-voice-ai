@@ -1,0 +1,12 @@
+{
+  "name": "tvs-dealer-voice-ai",
+  "version": "1.0.0",
+  "description": "TVS Dealer Voice AI Platform",
+  "scripts": {
+    "start": "cd website && node server.js",
+    "install": "cd website && npm install"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
