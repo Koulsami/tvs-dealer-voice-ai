@@ -14,8 +14,12 @@
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- Retell AI SDK -->
-  <script src="https://cdn.retellai.com/create-web-call.js"></script>
+  <!-- Retell AI SDK (loaded as ES module) -->
+  <script type="module">
+    import { RetellWebClient } from 'https://esm.sh/retell-client-js-sdk@2.0.7';
+    window.RetellWebClient = RetellWebClient;
+    window.dispatchEvent(new Event('retell-sdk-loaded'));
+  </script>
 
   <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏍️</text></svg>">

@@ -5,77 +5,129 @@ const RETELL_AGENT_ID = 'agent_2c149db1a0a0a022c2c2b7878f';
 let retellClient = null;
 let callState = 'idle'; // idle, connecting, active, speaking, listening
 
-// Initialize Retell client
+// Initialize Retell client when SDK is loaded
 function initRetell() {
-  if (typeof RetellWebClient !== 'undefined') {
-    retellClient = new RetellWebClient();
+  if (typeof window.RetellWebClient !== 'undefined') {
+    retellClient = new window.RetellWebClient();
     setupEventListeners();
-    console.log('Retell client initialized');
+    console.log('[Retell] Client initialized successfully');
   } else {
-    console.error('Retell SDK not loaded');
+    console.error('[Retell] SDK not loaded yet');
   }
 }
+
+// Wait for SDK to load
+window.addEventListener('retell-sdk-loaded', () => {
+  console.log('[Retell] SDK loaded event received');
+  initRetell();
+});
+
+// Fallback: try to initialize after a delay
+setTimeout(() => {
+  if (!retellClient && typeof window.RetellWebClient !== 'undefined') {
+    initRetell();
+  }
+}, 2000);
 
 // Setup event listeners
 function setupEventListeners() {
   if (!retellClient) return;
 
   retellClient.on('call_started', () => {
-    console.log('Call started');
+    console.log('[Retell] Call started');
     callState = 'active';
     updateWidgetState('active');
   });
 
   retellClient.on('call_ended', () => {
-    console.log('Call ended');
+    console.log('[Retell] Call ended');
     callState = 'idle';
     updateWidgetState('idle');
   });
 
   retellClient.on('agent_start_talking', () => {
+    console.log('[Retell] Agent started talking');
     callState = 'speaking';
     updateWidgetState('speaking');
   });
 
   retellClient.on('agent_stop_talking', () => {
+    console.log('[Retell] Agent stopped talking');
     callState = 'listening';
     updateWidgetState('listening');
   });
 
   retellClient.on('error', (error) => {
-    console.error('Retell error:', error);
+    console.error('[Retell] Error:', error);
     callState = 'idle';
     updateWidgetState('error');
     showToast('Voice call error. Please try again.', 'error');
   });
 }
 
+// Get access token from backend
+async function getAccessToken() {
+  console.log('[Retell] Requesting access token from backend...');
+
+  const response = await fetch('/api/create-web-call', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      metadata: {},
+      retell_llm_dynamic_variables: {}
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Failed to get access token');
+  }
+
+  const data = await response.json();
+  console.log('[Retell] Got access token');
+  return data.access_token;
+}
+
 // Start voice call
 async function startVoiceCall() {
   if (!retellClient) {
-    showToast('Voice assistant not ready. Please refresh.', 'error');
+    showToast('Voice assistant not ready. Please refresh the page.', 'error');
+    console.error('[Retell] Client not initialized');
     return;
   }
 
   if (callState !== 'idle') {
-    console.log('Call already in progress');
+    console.log('[Retell] Call already in progress');
     return;
   }
 
   try {
     callState = 'connecting';
     updateWidgetState('connecting');
+    showToast('Connecting to voice assistant...', 'info');
 
+    // Get access token from backend
+    const accessToken = await getAccessToken();
+
+    // Start the call with access token
     await retellClient.startCall({
-      agentId: RETELL_AGENT_ID,
+      accessToken: accessToken,
       sampleRate: 24000,
-      enableUpdate: true
     });
+
+    console.log('[Retell] Call started successfully');
   } catch (error) {
-    console.error('Failed to start call:', error);
+    console.error('[Retell] Failed to start call:', error);
     callState = 'idle';
     updateWidgetState('idle');
-    showToast('Could not start voice call. Please try again.', 'error');
+
+    if (error.message.includes('RETELL_API_KEY')) {
+      showToast('Voice assistant not configured. Please contact support.', 'error');
+    } else {
+      showToast('Could not start voice call: ' + error.message, 'error');
+    }
   }
 }
 
@@ -85,6 +137,7 @@ function endVoiceCall() {
     retellClient.stopCall();
     callState = 'idle';
     updateWidgetState('idle');
+    showToast('Call ended', 'info');
   }
 }
 
@@ -114,7 +167,7 @@ function updateWidgetState(state) {
   switch (state) {
     case 'idle':
       widgetIcon.innerHTML = microphoneIcon;
-      widgetText.textContent = 'Talk to Us';
+      widgetText.textContent = 'Talk to Ria';
       widgetButton.classList.remove('bg-green-500', 'bg-yellow-500', 'bg-blue-500', 'bg-red-500');
       widgetButton.classList.add('bg-tvs-red');
       if (pulseRing) pulseRing.classList.add('hidden');
@@ -178,8 +231,11 @@ const errorIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill=
 
 // Toast notification
 function showToast(message, type = 'info') {
+  // Remove existing toasts
+  document.querySelectorAll('.toast-notification').forEach(t => t.remove());
+
   const toast = document.createElement('div');
-  toast.className = `fixed bottom-24 right-6 px-6 py-3 rounded-lg shadow-lg text-white transform transition-all duration-300 z-50 ${
+  toast.className = `toast-notification fixed bottom-24 right-6 px-6 py-3 rounded-lg shadow-lg text-white transform transition-all duration-300 z-50 ${
     type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-gray-800'
   }`;
   toast.textContent = message;
@@ -191,8 +247,5 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
-  // Wait for Retell SDK to load
-  setTimeout(initRetell, 1000);
-});
+// Log initialization status
+console.log('[Retell] Script loaded, waiting for SDK...');
