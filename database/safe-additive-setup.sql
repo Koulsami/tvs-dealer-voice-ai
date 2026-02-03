@@ -159,8 +159,9 @@ WHERE NOT EXISTS (SELECT 1 FROM promotions LIMIT 1);
 -- ============================================
 -- SEED DATA: SHOWROOM PRICING (if empty)
 -- Uses existing models table
+-- NOTE: on_road_price is a generated column - do NOT insert it
 -- ============================================
-INSERT INTO showroom_pricing (showroom_id, model_id, ex_showroom_price, rto_charges, insurance_1yr, handling_charges, on_road_price)
+INSERT INTO showroom_pricing (showroom_id, model_id, ex_showroom_price, rto_charges, insurance_1yr, handling_charges)
 SELECT
     s.id,
     m.id,
@@ -175,9 +176,7 @@ SELECT
         WHEN m.ex_showroom_price_base > 100000 THEN 8000
         ELSE 4000
     END,
-    2000,
-    m.ex_showroom_price_base +
-    CASE WHEN m.ex_showroom_price_base > 200000 THEN 29000 WHEN m.ex_showroom_price_base > 100000 THEN 20000 ELSE 11000 END
+    2000
 FROM showrooms s
 CROSS JOIN models m
 WHERE NOT EXISTS (SELECT 1 FROM showroom_pricing LIMIT 1)
