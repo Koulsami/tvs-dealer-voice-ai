@@ -2,22 +2,47 @@
 const SUPABASE_URL = 'https://rwnkbwfigdxjrwvoafby.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bmtid2ZpZ2R4anJ3dm9hZmJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwMzYyNjcsImV4cCI6MjA4NTYxMjI2N30.RjJPmthpdwGLGjXMC30b0we9acT2IjqnpGx8nDoGtwo';
 
+console.log('[Supabase] Initializing client...');
+console.log('[Supabase] URL:', SUPABASE_URL);
+
 // Initialize Supabase client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabase;
+try {
+  if (!window.supabase) {
+    console.error('[Supabase] ERROR: window.supabase is not defined. SDK not loaded.');
+  } else {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('[Supabase] Client initialized successfully');
+  }
+} catch (err) {
+  console.error('[Supabase] ERROR initializing client:', err);
+}
 
 // ============ MODELS ============
 async function fetchModels() {
-  const { data, error } = await supabase
-    .from('models')
-    .select('id, name, category, engine_cc, ex_showroom_price_base, mileage_kmpl, image_url')
-    .eq('is_active', true)
-    .order('category');
-
-  if (error) {
-    console.error('Error fetching models:', error);
+  console.log('[fetchModels] Starting fetch...');
+  if (!supabase) {
+    console.error('[fetchModels] ERROR: Supabase client not initialized');
     return [];
   }
-  return data || [];
+
+  try {
+    const { data, error } = await supabase
+      .from('models')
+      .select('id, name, category, engine_cc, ex_showroom_price_base, mileage_kmpl, image_url')
+      .eq('is_active', true)
+      .order('category');
+
+    if (error) {
+      console.error('[fetchModels] ERROR:', error);
+      return [];
+    }
+    console.log('[fetchModels] SUCCESS - Found', data?.length || 0, 'models:', data);
+    return data || [];
+  } catch (err) {
+    console.error('[fetchModels] EXCEPTION:', err);
+    return [];
+  }
 }
 
 // ============ SHOWROOMS ============

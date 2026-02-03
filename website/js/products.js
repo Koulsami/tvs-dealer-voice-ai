@@ -83,8 +83,12 @@ function createProductCard(model) {
 
 // Render product grid
 async function renderProductGrid() {
+  console.log('[renderProductGrid] Starting...');
   const container = document.getElementById('product-grid');
-  if (!container) return;
+  if (!container) {
+    console.error('[renderProductGrid] ERROR: product-grid container not found');
+    return;
+  }
 
   // Show loading state
   container.innerHTML = `
@@ -94,23 +98,30 @@ async function renderProductGrid() {
   `;
 
   try {
+    console.log('[renderProductGrid] Calling fetchModels...');
     const models = await fetchModels();
+    console.log('[renderProductGrid] Got models:', models?.length || 0);
 
-    if (models.length === 0) {
+    if (!models || models.length === 0) {
+      console.warn('[renderProductGrid] No models returned');
       container.innerHTML = `
         <div class="col-span-full text-center py-12">
           <p class="text-gray-500">No models available at the moment.</p>
+          <p class="text-xs text-gray-400 mt-2">Check console for errors (F12)</p>
         </div>
       `;
       return;
     }
 
+    console.log('[renderProductGrid] Rendering', models.length, 'product cards');
     container.innerHTML = models.map(model => createProductCard(model)).join('');
+    console.log('[renderProductGrid] Done!');
   } catch (error) {
-    console.error('Error rendering products:', error);
+    console.error('[renderProductGrid] EXCEPTION:', error);
     container.innerHTML = `
       <div class="col-span-full text-center py-12">
         <p class="text-red-500">Failed to load products. Please refresh the page.</p>
+        <p class="text-xs text-gray-400 mt-2">Error: ${error.message}</p>
       </div>
     `;
   }
