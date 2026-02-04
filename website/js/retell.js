@@ -33,18 +33,22 @@ function toggleRiaWidget() {
 function switchMode(mode) {
   currentMode = mode;
 
+  const chatMode = document.getElementById('chat-mode');
+  const voiceMode = document.getElementById('voice-mode');
+
   // Update mode buttons
   document.getElementById('mode-chat').classList.toggle('active', mode === 'chat');
   document.getElementById('mode-voice').classList.toggle('active', mode === 'voice');
 
-  // Show/hide content
-  document.getElementById('chat-mode').style.display = mode === 'chat' ? 'flex' : 'none';
-  document.getElementById('voice-mode').style.display = mode === 'voice' ? 'flex' : 'none';
-
-  // Update chat mode display
+  // Show/hide content with proper flex styling
   if (mode === 'chat') {
-    document.getElementById('chat-mode').style.display = 'flex';
-    document.getElementById('chat-mode').style.flexDirection = 'column';
+    chatMode.style.display = 'flex';
+    chatMode.style.flexDirection = 'column';
+    voiceMode.style.display = 'none';
+  } else {
+    chatMode.style.display = 'none';
+    voiceMode.style.display = 'flex';
+    voiceMode.style.flexDirection = 'column';
   }
 }
 
