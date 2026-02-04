@@ -47,31 +47,53 @@ async function fetchModels() {
 
 // ============ SHOWROOMS ============
 async function fetchShowrooms() {
-  const { data, error } = await supabase
-    .from('showrooms')
-    .select('*')
-    .eq('is_active', true)
-    .order('city');
-
-  if (error) {
-    console.error('Error fetching showrooms:', error);
+  if (!supabase) {
+    console.error('[fetchShowrooms] Supabase client not initialized');
     return [];
   }
-  return data || [];
+
+  try {
+    const { data, error } = await supabase
+      .from('showrooms')
+      .select('*')
+      .eq('is_active', true)
+      .order('city');
+
+    if (error) {
+      console.error('[fetchShowrooms] Error:', error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error('[fetchShowrooms] Exception:', err);
+    return [];
+  }
 }
 
 // ============ PROMOTIONS ============
 async function fetchPromotions() {
-  const { data, error } = await supabase
-    .from('promotions')
-    .select('*')
-    .order('priority', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching promotions:', error);
+  console.log('[fetchPromotions] Starting...');
+  if (!supabase) {
+    console.error('[fetchPromotions] Supabase client not initialized');
     return [];
   }
-  return data || [];
+
+  try {
+    const { data, error } = await supabase
+      .from('promotions')
+      .select('*')
+      .order('priority', { ascending: false });
+
+    if (error) {
+      console.error('[fetchPromotions] Error:', error);
+      return [];
+    }
+    console.log('[fetchPromotions] Success, found', data?.length || 0, 'promotions');
+    return data || [];
+  } catch (err) {
+    console.error('[fetchPromotions] Exception:', err);
+    return [];
+  }
 }
 
 async function addPromotion(promotion) {
@@ -114,23 +136,33 @@ async function deletePromotion(id) {
 
 // ============ INVENTORY ============
 async function fetchInventory() {
-  const { data, error } = await supabase
-    .from('inventory')
-    .select(`
-      id,
-      quantity_available,
-      expected_arrival,
-      models (id, name),
-      showrooms (id, name, city),
-      colors (id, name, display_name)
-    `)
-    .order('quantity_available', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching inventory:', error);
+  if (!supabase) {
+    console.error('[fetchInventory] Supabase client not initialized');
     return [];
   }
-  return data || [];
+
+  try {
+    const { data, error } = await supabase
+      .from('inventory')
+      .select(`
+        id,
+        quantity_available,
+        expected_arrival,
+        models (id, name),
+        showrooms (id, name, city),
+        colors (id, name, display_name)
+      `)
+      .order('quantity_available', { ascending: false });
+
+    if (error) {
+      console.error('[fetchInventory] Error:', error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error('[fetchInventory] Exception:', err);
+    return [];
+  }
 }
 
 async function updateInventory(id, quantity) {
@@ -145,25 +177,35 @@ async function updateInventory(id, quantity) {
 
 // ============ PRICING ============
 async function fetchPricing() {
-  const { data, error } = await supabase
-    .from('showroom_pricing')
-    .select(`
-      id,
-      ex_showroom_price,
-      rto_charges,
-      insurance_1yr,
-      handling_charges,
-      on_road_price,
-      models (id, name),
-      showrooms (id, name, city)
-    `)
-    .order('on_road_price');
-
-  if (error) {
-    console.error('Error fetching pricing:', error);
+  if (!supabase) {
+    console.error('[fetchPricing] Supabase client not initialized');
     return [];
   }
-  return data || [];
+
+  try {
+    const { data, error } = await supabase
+      .from('showroom_pricing')
+      .select(`
+        id,
+        ex_showroom_price,
+        rto_charges,
+        insurance_1yr,
+        handling_charges,
+        on_road_price,
+        models (id, name),
+        showrooms (id, name, city)
+      `)
+      .order('on_road_price');
+
+    if (error) {
+      console.error('[fetchPricing] Error:', error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error('[fetchPricing] Exception:', err);
+    return [];
+  }
 }
 
 async function updatePricing(id, updates) {
@@ -178,27 +220,37 @@ async function updatePricing(id, updates) {
 
 // ============ TEST DRIVE REQUESTS ============
 async function fetchTestDriveRequests() {
-  const { data, error } = await supabase
-    .from('test_drive_requests')
-    .select(`
-      id,
-      customer_name,
-      customer_phone,
-      city,
-      preferred_date,
-      preferred_time,
-      status,
-      created_at,
-      models (id, name),
-      showrooms (id, name)
-    `)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching test drive requests:', error);
+  if (!supabase) {
+    console.error('[fetchTestDriveRequests] Supabase client not initialized');
     return [];
   }
-  return data || [];
+
+  try {
+    const { data, error } = await supabase
+      .from('test_drive_requests')
+      .select(`
+        id,
+        customer_name,
+        customer_phone,
+        city,
+        preferred_date,
+        preferred_time,
+        status,
+        created_at,
+        models (id, name),
+        showrooms (id, name)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[fetchTestDriveRequests] Error:', error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error('[fetchTestDriveRequests] Exception:', err);
+    return [];
+  }
 }
 
 async function updateTestDriveStatus(id, status) {
@@ -213,16 +265,26 @@ async function updateTestDriveStatus(id, status) {
 
 // ============ CALLBACKS ============
 async function fetchCallbacks() {
-  const { data, error } = await supabase
-    .from('callbacks')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching callbacks:', error);
+  if (!supabase) {
+    console.error('[fetchCallbacks] Supabase client not initialized');
     return [];
   }
-  return data || [];
+
+  try {
+    const { data, error } = await supabase
+      .from('callbacks')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[fetchCallbacks] Error:', error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error('[fetchCallbacks] Exception:', err);
+    return [];
+  }
 }
 
 async function updateCallbackStatus(id, status) {
