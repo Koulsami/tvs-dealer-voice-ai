@@ -70,7 +70,7 @@ const productData = {
       { name: "Pearl White", hex: "#F5F5F5", image: "apache-rtr-160-white.jpg" }
     ],
     images: {
-      main: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800",
+      main: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800",
       gallery: []
     },
     emi_starts: 4500
@@ -202,7 +202,7 @@ const productData = {
       { name: "Volcano Red", hex: "#B91C1C", image: "jupiter-125-red.jpg" }
     ],
     images: {
-      main: "https://images.unsplash.com/photo-1622185135505-2d795003b043?w=800",
+      main: "https://images.unsplash.com/photo-1558981359-219d6364c9c8?w=800",
       gallery: []
     },
     emi_starts: 2800
@@ -247,7 +247,7 @@ const productData = {
       { name: "Metallic Grey", hex: "#6B7280", image: "ntorq-grey.jpg" }
     ],
     images: {
-      main: "https://images.unsplash.com/photo-1571188654248-7a89213915f7?w=800",
+      main: "https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?w=800",
       gallery: []
     },
     emi_starts: 3200

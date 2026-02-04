@@ -1,5 +1,40 @@
 // Products page logic
 
+// Global cache for products and preloaded images
+window.productCache = {
+  products: [],
+  images: new Map()
+};
+
+// Preload images for instant modal display
+function preloadProductImages(products) {
+  console.log('[preloadProductImages] Preloading', products.length, 'product images...');
+  products.forEach(product => {
+    const imageUrl = product.image_url;
+    if (imageUrl && !window.productCache.images.has(imageUrl)) {
+      const img = new Image();
+      img.onload = () => {
+        console.log('[preloadProductImages] Cached:', product.name);
+      };
+      img.onerror = () => {
+        console.warn('[preloadProductImages] Failed to cache:', product.name);
+      };
+      img.src = imageUrl;
+      window.productCache.images.set(imageUrl, img);
+    }
+  });
+}
+
+// Get product from cache by name (for modal)
+window.getProductByName = function(name) {
+  if (!name) return null;
+  const nameLower = name.toLowerCase();
+  return window.productCache.products.find(p =>
+    p.name.toLowerCase().includes(nameLower) ||
+    nameLower.includes(p.name.toLowerCase())
+  );
+};
+
 // Format price in Indian currency format
 function formatPrice(price) {
   if (!price) return 'Price on request';
@@ -98,6 +133,8 @@ async function fetchProductsFromServer() {
     const response = await fetch('/api/products');
     if (!response.ok) throw new Error('Server API failed');
     const data = await response.json();
+    // Store raw data for modal (with full images object)
+    window.productCache.rawProducts = data;
     // Transform server data to match expected format
     return data.map(p => ({
       id: p.id,
@@ -106,7 +143,9 @@ async function fetchProductsFromServer() {
       engine_cc: p.specs?.engine?.replace(/[^0-9.]/g, '') || null,
       mileage_kmpl: p.specs?.mileage?.replace(/[^0-9]/g, '') || null,
       ex_showroom_price_base: p.price?.ex_showroom || null,
-      image_url: p.images?.main || null
+      image_url: p.images?.main || null,
+      // Keep full product data for modal reference
+      _raw: p
     }));
   } catch (err) {
     console.log('[fetchProductsFromServer] Failed, will use Supabase:', err.message);
@@ -155,6 +194,13 @@ async function renderProductGrid() {
 
     console.log('[renderProductGrid] Rendering', models.length, 'product cards');
     container.innerHTML = models.map(model => createProductCard(model)).join('');
+
+    // Cache products for modal access
+    window.productCache.products = models;
+
+    // Preload images for instant modal display
+    preloadProductImages(models);
+
     console.log('[renderProductGrid] Done!');
   } catch (error) {
     console.error('[renderProductGrid] EXCEPTION:', error);

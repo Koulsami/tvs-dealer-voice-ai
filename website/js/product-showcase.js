@@ -79,9 +79,23 @@ function showProductShowcase(product) {
   document.getElementById('showcase-title').textContent = product.name;
   document.getElementById('showcase-tagline').textContent = product.tagline || '';
 
-  // Update image
+  // Update image - use preloaded image if available
   const imageEl = document.getElementById('showcase-image');
-  imageEl.src = product.images?.main || 'https://via.placeholder.com/600x400/E31837/FFFFFF?text=' + encodeURIComponent(product.name);
+  let imageUrl = product.images?.main;
+
+  // Check if we have a preloaded image from the product cache
+  if (window.productCache?.images) {
+    // Try to find the image URL from cached products (same URL used in product cards)
+    const cachedProduct = window.productCache?.products?.find(p =>
+      p.name.toLowerCase() === product.name.toLowerCase()
+    );
+    if (cachedProduct?.image_url) {
+      imageUrl = cachedProduct.image_url;
+      console.log('[showProductShowcase] Using preloaded image for:', product.name);
+    }
+  }
+
+  imageEl.src = imageUrl || 'https://via.placeholder.com/600x400/E31837/FFFFFF?text=' + encodeURIComponent(product.name);
   imageEl.alt = product.name;
 
   // Update price
