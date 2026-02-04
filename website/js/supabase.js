@@ -333,7 +333,7 @@ function subscribeToChanges(table, callback) {
     return null;
   }
 
-  return supabase
+  return db
     .channel(`${table}-changes`)
     .on('postgres_changes',
       { event: '*', schema: 'public', table: table },
