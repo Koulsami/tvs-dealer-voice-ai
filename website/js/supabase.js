@@ -237,25 +237,40 @@ async function updateCallbackStatus(id, status) {
 
 // ============ STATS ============
 async function fetchStats() {
-  const [models, showrooms, testDrives, callbacks, promotions] = await Promise.all([
-    supabase.from('models').select('id', { count: 'exact' }).eq('is_active', true),
-    supabase.from('showrooms').select('id', { count: 'exact' }).eq('is_active', true),
-    supabase.from('test_drive_requests').select('id', { count: 'exact' }).eq('status', 'pending'),
-    supabase.from('callbacks').select('id', { count: 'exact' }).eq('status', 'pending'),
-    supabase.from('promotions').select('id', { count: 'exact' }).eq('is_active', true)
-  ]);
+  if (!supabase) {
+    console.error('[fetchStats] Supabase client not initialized');
+    return { models: 0, showrooms: 0, pendingTestDrives: 0, pendingCallbacks: 0, activePromotions: 0 };
+  }
 
-  return {
-    models: models.count || 0,
-    showrooms: showrooms.count || 0,
-    pendingTestDrives: testDrives.count || 0,
-    pendingCallbacks: callbacks.count || 0,
-    activePromotions: promotions.count || 0
-  };
+  try {
+    const [models, showrooms, testDrives, callbacks, promotions] = await Promise.all([
+      supabase.from('models').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('showrooms').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('test_drive_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('callbacks').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('promotions').select('*', { count: 'exact', head: true }).eq('is_active', true)
+    ]);
+
+    return {
+      models: models.count || 0,
+      showrooms: showrooms.count || 0,
+      pendingTestDrives: testDrives.count || 0,
+      pendingCallbacks: callbacks.count || 0,
+      activePromotions: promotions.count || 0
+    };
+  } catch (err) {
+    console.error('[fetchStats] Error:', err);
+    return { models: 0, showrooms: 0, pendingTestDrives: 0, pendingCallbacks: 0, activePromotions: 0 };
+  }
 }
 
 // ============ REAL-TIME SUBSCRIPTIONS ============
 function subscribeToChanges(table, callback) {
+  if (!supabase) {
+    console.error('[subscribeToChanges] Supabase client not initialized');
+    return null;
+  }
+
   return supabase
     .channel(`${table}-changes`)
     .on('postgres_changes',
