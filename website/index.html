@@ -278,17 +278,227 @@
     </div>
   </footer>
 
-  <!-- Voice Widget -->
-  <div id="voice-widget" class="idle">
-    <div id="pulse-ring" class="hidden text-green-500"></div>
-    <button id="voice-widget-btn" onclick="toggleVoiceCall()" class="bg-tvs-red">
-      <span id="widget-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+  <!-- Ria AI Assistant Widget -->
+  <div id="ria-widget">
+    <!-- Floating Avatar Button -->
+    <button id="ria-avatar-btn" onclick="toggleRiaWidget()">
+      <div class="avatar-container">
+        <!-- Beautiful Female Avatar SVG -->
+        <svg class="avatar-img" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="skinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#fdd9b5"/>
+              <stop offset="100%" style="stop-color:#f5c99d"/>
+            </linearGradient>
+            <linearGradient id="hairGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#2d1b0e"/>
+              <stop offset="100%" style="stop-color:#4a2c17"/>
+            </linearGradient>
+            <linearGradient id="shirtGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#E31837"/>
+              <stop offset="100%" style="stop-color:#ff4d6d"/>
+            </linearGradient>
+          </defs>
+          <!-- Background Circle -->
+          <circle cx="50" cy="50" r="48" fill="#fff5f5"/>
+          <!-- Hair Back -->
+          <ellipse cx="50" cy="42" rx="32" ry="30" fill="url(#hairGrad)"/>
+          <!-- Neck -->
+          <rect x="42" y="68" width="16" height="12" rx="4" fill="url(#skinGrad)"/>
+          <!-- Shirt/Collar -->
+          <path d="M30 95 Q35 78 50 78 Q65 78 70 95" fill="url(#shirtGrad)"/>
+          <!-- Face -->
+          <ellipse cx="50" cy="48" rx="25" ry="27" fill="url(#skinGrad)"/>
+          <!-- Hair Front -->
+          <path d="M25 42 Q25 22 50 20 Q75 22 75 42 Q72 32 50 30 Q28 32 25 42" fill="url(#hairGrad)"/>
+          <!-- Hair Side Left -->
+          <path d="M24 45 Q18 55 22 72 Q24 60 28 52 Q26 48 24 45" fill="url(#hairGrad)"/>
+          <!-- Hair Side Right -->
+          <path d="M76 45 Q82 55 78 72 Q76 60 72 52 Q74 48 76 45" fill="url(#hairGrad)"/>
+          <!-- Eyebrows -->
+          <path d="M36 40 Q40 38 44 40" stroke="#3d2314" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <path d="M56 40 Q60 38 64 40" stroke="#3d2314" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <!-- Eyes -->
+          <ellipse cx="40" cy="47" rx="5" ry="4" fill="#fff"/>
+          <ellipse cx="60" cy="47" rx="5" ry="4" fill="#fff"/>
+          <circle cx="40" cy="47" r="2.5" fill="#4a3728"/>
+          <circle cx="60" cy="47" r="2.5" fill="#4a3728"/>
+          <circle cx="41" cy="46" r="1" fill="#fff"/>
+          <circle cx="61" cy="46" r="1" fill="#fff"/>
+          <!-- Eyelashes -->
+          <path d="M35 45 Q36 43 38 44" stroke="#2d1b0e" stroke-width="0.8" fill="none"/>
+          <path d="M42 44 Q44 43 45 45" stroke="#2d1b0e" stroke-width="0.8" fill="none"/>
+          <path d="M55 45 Q56 43 58 44" stroke="#2d1b0e" stroke-width="0.8" fill="none"/>
+          <path d="M62 44 Q64 43 65 45" stroke="#2d1b0e" stroke-width="0.8" fill="none"/>
+          <!-- Nose -->
+          <path d="M50 48 Q51 53 50 56 Q48 55 47 56" stroke="#e0b89a" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+          <!-- Smile -->
+          <path d="M42 62 Q50 68 58 62" stroke="#c96d6d" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <!-- Lips -->
+          <ellipse cx="50" cy="63" rx="6" ry="3" fill="#e88a8a"/>
+          <!-- Blush -->
+          <ellipse cx="34" cy="55" rx="4" ry="2.5" fill="#ffb6b6" opacity="0.5"/>
+          <ellipse cx="66" cy="55" rx="4" ry="2.5" fill="#ffb6b6" opacity="0.5"/>
+          <!-- Earrings -->
+          <circle cx="24" cy="52" r="2" fill="#ffd700"/>
+          <circle cx="76" cy="52" r="2" fill="#ffd700"/>
         </svg>
-      </span>
-      <span id="widget-text">Talk to Us</span>
+        <span class="status-dot"></span>
+      </div>
+      <div class="pulse-rings">
+        <span></span>
+        <span></span>
+      </div>
     </button>
+
+    <!-- Tooltip -->
+    <div id="ria-tooltip">
+      <div class="tooltip-text">Hi! I'm Ria</div>
+      <div class="tooltip-hint">Click to chat or call</div>
+    </div>
+
+    <!-- Expanded Panel -->
+    <div id="ria-panel">
+      <!-- Header -->
+      <div class="ria-header">
+        <svg class="header-avatar" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="skinGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#fdd9b5"/>
+              <stop offset="100%" style="stop-color:#f5c99d"/>
+            </linearGradient>
+            <linearGradient id="hairGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#2d1b0e"/>
+              <stop offset="100%" style="stop-color:#4a2c17"/>
+            </linearGradient>
+          </defs>
+          <circle cx="50" cy="50" r="48" fill="#fff5f5"/>
+          <ellipse cx="50" cy="42" rx="32" ry="30" fill="url(#hairGrad2)"/>
+          <rect x="42" y="68" width="16" height="12" rx="4" fill="url(#skinGrad2)"/>
+          <path d="M30 95 Q35 78 50 78 Q65 78 70 95" fill="#E31837"/>
+          <ellipse cx="50" cy="48" rx="25" ry="27" fill="url(#skinGrad2)"/>
+          <path d="M25 42 Q25 22 50 20 Q75 22 75 42 Q72 32 50 30 Q28 32 25 42" fill="url(#hairGrad2)"/>
+          <path d="M24 45 Q18 55 22 72 Q24 60 28 52 Q26 48 24 45" fill="url(#hairGrad2)"/>
+          <path d="M76 45 Q82 55 78 72 Q76 60 72 52 Q74 48 76 45" fill="url(#hairGrad2)"/>
+          <ellipse cx="40" cy="47" rx="5" ry="4" fill="#fff"/>
+          <ellipse cx="60" cy="47" rx="5" ry="4" fill="#fff"/>
+          <circle cx="40" cy="47" r="2.5" fill="#4a3728"/>
+          <circle cx="60" cy="47" r="2.5" fill="#4a3728"/>
+          <circle cx="41" cy="46" r="1" fill="#fff"/>
+          <circle cx="61" cy="46" r="1" fill="#fff"/>
+          <path d="M42 62 Q50 68 58 62" stroke="#c96d6d" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <ellipse cx="50" cy="63" rx="6" ry="3" fill="#e88a8a"/>
+          <ellipse cx="34" cy="55" rx="4" ry="2.5" fill="#ffb6b6" opacity="0.5"/>
+          <ellipse cx="66" cy="55" rx="4" ry="2.5" fill="#ffb6b6" opacity="0.5"/>
+        </svg>
+        <div class="header-info">
+          <h3>Ria</h3>
+          <p><span class="status-indicator"></span> TVS AI Assistant</p>
+        </div>
+        <button class="close-btn" onclick="toggleRiaWidget()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mode Selection -->
+      <div class="ria-mode-select">
+        <button class="mode-btn active" onclick="switchMode('chat')" id="mode-chat">
+          <div class="mode-icon">💬</div>
+          <div class="mode-label">Chat</div>
+          <div class="mode-desc">Type your message</div>
+        </button>
+        <button class="mode-btn" onclick="switchMode('voice')" id="mode-voice">
+          <div class="mode-icon">🎙️</div>
+          <div class="mode-label">Talk</div>
+          <div class="mode-desc">Voice conversation</div>
+        </button>
+      </div>
+
+      <!-- Content Area -->
+      <div class="ria-content">
+        <!-- Chat Mode -->
+        <div id="chat-mode" class="chat-mode">
+          <div class="chat-messages" id="chat-messages">
+            <div class="chat-message ria">
+              Hi! I'm Ria, your TVS assistant. How can I help you today? Ask me about prices, models, test drives, or anything else!
+            </div>
+          </div>
+          <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+              <input type="text" id="chat-input" placeholder="Type your message..." onkeypress="handleChatKeypress(event)">
+              <button class="chat-send-btn" onclick="sendChatMessage()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Voice Mode -->
+        <div id="voice-mode" class="voice-mode" style="display: none;">
+          <div class="voice-call-area">
+            <div class="voice-avatar-container">
+              <svg class="voice-avatar" id="voice-avatar" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="skinGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#fdd9b5"/>
+                    <stop offset="100%" style="stop-color:#f5c99d"/>
+                  </linearGradient>
+                  <linearGradient id="hairGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#2d1b0e"/>
+                    <stop offset="100%" style="stop-color:#4a2c17"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="48" fill="#fff5f5"/>
+                <ellipse cx="50" cy="42" rx="32" ry="30" fill="url(#hairGrad3)"/>
+                <rect x="42" y="68" width="16" height="12" rx="4" fill="url(#skinGrad3)"/>
+                <path d="M30 95 Q35 78 50 78 Q65 78 70 95" fill="#E31837"/>
+                <ellipse cx="50" cy="48" rx="25" ry="27" fill="url(#skinGrad3)"/>
+                <path d="M25 42 Q25 22 50 20 Q75 22 75 42 Q72 32 50 30 Q28 32 25 42" fill="url(#hairGrad3)"/>
+                <path d="M24 45 Q18 55 22 72 Q24 60 28 52 Q26 48 24 45" fill="url(#hairGrad3)"/>
+                <path d="M76 45 Q82 55 78 72 Q76 60 72 52 Q74 48 76 45" fill="url(#hairGrad3)"/>
+                <ellipse cx="40" cy="47" rx="5" ry="4" fill="#fff"/>
+                <ellipse cx="60" cy="47" rx="5" ry="4" fill="#fff"/>
+                <circle cx="40" cy="47" r="2.5" fill="#4a3728"/>
+                <circle cx="60" cy="47" r="2.5" fill="#4a3728"/>
+                <circle cx="41" cy="46" r="1" fill="#fff"/>
+                <circle cx="61" cy="46" r="1" fill="#fff"/>
+                <path d="M42 62 Q50 68 58 62" stroke="#c96d6d" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <ellipse cx="50" cy="63" rx="6" ry="3" fill="#e88a8a"/>
+                <ellipse cx="34" cy="55" rx="4" ry="2.5" fill="#ffb6b6" opacity="0.5"/>
+                <ellipse cx="66" cy="55" rx="4" ry="2.5" fill="#ffb6b6" opacity="0.5"/>
+              </svg>
+              <div class="voice-waves" id="voice-waves">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+            <div class="voice-status" id="voice-status">Ready to talk</div>
+            <div class="voice-hint" id="voice-hint">Click the button to start</div>
+            <button class="voice-control-btn start" id="voice-control-btn" onclick="toggleVoiceCall()">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Suggestions -->
+      <div class="quick-suggestions">
+        <div class="quick-suggestions-title">Quick questions</div>
+        <div class="quick-suggestions-list">
+          <button class="suggestion-chip" onclick="useSuggestion('What\\'s the price of Apache RTR 200?')">Apache price</button>
+          <button class="suggestion-chip" onclick="useSuggestion('Book a test drive')">Test drive</button>
+          <button class="suggestion-chip" onclick="useSuggestion('Current offers?')">Offers</button>
+          <button class="suggestion-chip" onclick="useSuggestion('iQube range?')">iQube range</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Scripts -->

@@ -1,9 +1,182 @@
+// ================================================
+// RIA AI ASSISTANT - Chat & Voice Integration
+// ================================================
+
 // Retell AI Configuration
 const RETELL_AGENT_ID = 'agent_2c149db1a0a0a022c2c2b7878f';
 
-// Widget state management
+// State management
 let retellClient = null;
 let callState = 'idle'; // idle, connecting, active, speaking, listening
+let currentMode = 'chat'; // chat, voice
+let isWidgetExpanded = false;
+
+// ================================================
+// WIDGET CONTROLS
+// ================================================
+
+function toggleRiaWidget() {
+  const widget = document.getElementById('ria-widget');
+  isWidgetExpanded = !isWidgetExpanded;
+
+  if (isWidgetExpanded) {
+    widget.classList.add('expanded');
+  } else {
+    widget.classList.remove('expanded');
+    // End call if closing while in voice mode
+    if (callState !== 'idle') {
+      endVoiceCall();
+    }
+  }
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+
+  // Update mode buttons
+  document.getElementById('mode-chat').classList.toggle('active', mode === 'chat');
+  document.getElementById('mode-voice').classList.toggle('active', mode === 'voice');
+
+  // Show/hide content
+  document.getElementById('chat-mode').style.display = mode === 'chat' ? 'flex' : 'none';
+  document.getElementById('voice-mode').style.display = mode === 'voice' ? 'flex' : 'none';
+
+  // Update chat mode display
+  if (mode === 'chat') {
+    document.getElementById('chat-mode').style.display = 'flex';
+    document.getElementById('chat-mode').style.flexDirection = 'column';
+  }
+}
+
+// ================================================
+// CHAT FUNCTIONALITY
+// ================================================
+
+function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const message = input.value.trim();
+
+  if (!message) return;
+
+  // Add user message
+  addChatMessage(message, 'user');
+  input.value = '';
+
+  // Show typing indicator
+  showTypingIndicator();
+
+  // Simulate AI response (in production, this would call your AI backend)
+  setTimeout(() => {
+    hideTypingIndicator();
+    const response = generateResponse(message);
+    addChatMessage(response, 'ria');
+  }, 1000 + Math.random() * 1000);
+}
+
+function addChatMessage(text, sender) {
+  const container = document.getElementById('chat-messages');
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `chat-message ${sender}`;
+  messageDiv.textContent = text;
+  container.appendChild(messageDiv);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showTypingIndicator() {
+  const container = document.getElementById('chat-messages');
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'chat-message ria';
+  typingDiv.id = 'typing-indicator';
+  typingDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+  container.appendChild(typingDiv);
+  container.scrollTop = container.scrollHeight;
+}
+
+function hideTypingIndicator() {
+  const typing = document.getElementById('typing-indicator');
+  if (typing) typing.remove();
+}
+
+function handleChatKeypress(event) {
+  if (event.key === 'Enter') {
+    sendChatMessage();
+  }
+}
+
+function useSuggestion(text) {
+  if (currentMode === 'chat') {
+    document.getElementById('chat-input').value = text;
+    sendChatMessage();
+  } else {
+    // For voice mode, start call and show suggestion
+    if (callState === 'idle') {
+      startVoiceCall();
+    }
+  }
+}
+
+// Simple response generator (replace with actual AI backend in production)
+function generateResponse(message) {
+  const lowerMessage = message.toLowerCase();
+
+  if (lowerMessage.includes('price') || lowerMessage.includes('cost')) {
+    if (lowerMessage.includes('apache') || lowerMessage.includes('rtr')) {
+      return "The Apache RTR 200 4V starts at ₹1,42,975 (ex-showroom). The on-road price varies by city. Would you like me to get you the exact on-road price for your city?";
+    }
+    if (lowerMessage.includes('jupiter')) {
+      return "The Jupiter 125 starts at ₹79,530 (ex-showroom). It's our best-selling scooter! Want me to share the on-road price for your location?";
+    }
+    if (lowerMessage.includes('ntorq')) {
+      return "The Ntorq 125 starts at ₹86,677 (ex-showroom). The Race Edition is priced at ₹96,560. Interested in a test ride?";
+    }
+    if (lowerMessage.includes('iqube')) {
+      return "The iQube Electric starts at ₹1,17,639 (ex-showroom) before subsidies. With government subsidies, you could save up to ₹30,000! Want more details?";
+    }
+    return "I'd be happy to help with pricing! Which model are you interested in - Apache series, Jupiter, Ntorq, iQube, or any other?";
+  }
+
+  if (lowerMessage.includes('test drive') || lowerMessage.includes('test ride')) {
+    return "Great choice! I can help you book a test drive. Please share your preferred date, time, and the model you'd like to test. Which showroom location works best for you?";
+  }
+
+  if (lowerMessage.includes('offer') || lowerMessage.includes('discount')) {
+    return "We have exciting offers this month! 🎉 Exchange bonus up to ₹10,000, low-interest EMI options, and free first-year insurance on select models. Which model are you considering?";
+  }
+
+  if (lowerMessage.includes('emi') || lowerMessage.includes('finance') || lowerMessage.includes('loan')) {
+    return "We offer flexible EMI options starting from ₹2,999/month! Our finance partners include HDFC, ICICI, and Bajaj Finance with interest rates as low as 7.99%. Want me to calculate EMI for a specific model?";
+  }
+
+  if (lowerMessage.includes('range') || lowerMessage.includes('iqube')) {
+    return "The iQube Electric offers a certified range of 100+ km on a single charge! It takes about 5 hours for a full charge. The TFT display shows real-time range. Would you like to know more about its features?";
+  }
+
+  if (lowerMessage.includes('mileage') || lowerMessage.includes('fuel')) {
+    return "Our bikes offer excellent mileage! Apache RTR 160 gives 45+ kmpl, Jupiter 125 delivers 52+ kmpl, and Star City+ offers an impressive 70+ kmpl. Which type of vehicle are you looking for?";
+  }
+
+  if (lowerMessage.includes('showroom') || lowerMessage.includes('dealer') || lowerMessage.includes('location')) {
+    return "I can help you find the nearest TVS showroom! Could you share your city or pin code? We have an extensive network across India.";
+  }
+
+  if (lowerMessage.includes('color') || lowerMessage.includes('colour')) {
+    return "Our vehicles come in multiple attractive colors! Apache series has racing-inspired colors, Jupiter offers elegant options, and Ntorq has bold, youthful shades. Which model's colors would you like to see?";
+  }
+
+  if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
+    return "Hello! 👋 I'm Ria, your TVS virtual assistant. I can help you with prices, specifications, test drives, offers, EMI calculations, and more. What would you like to know?";
+  }
+
+  if (lowerMessage.includes('thank')) {
+    return "You're welcome! 😊 Is there anything else I can help you with? Feel free to ask about any TVS products or services!";
+  }
+
+  return "I'd be happy to help! You can ask me about:\n• Vehicle prices and offers\n• Test drive bookings\n• EMI calculations\n• Specifications and features\n• Showroom locations\n\nWhat would you like to know?";
+}
+
+// ================================================
+// VOICE CALL FUNCTIONALITY
+// ================================================
 
 // Initialize Retell client when SDK is loaded
 function initRetell() {
@@ -36,31 +209,31 @@ function setupEventListeners() {
   retellClient.on('call_started', () => {
     console.log('[Retell] Call started');
     callState = 'active';
-    updateWidgetState('active');
+    updateVoiceUI('active');
   });
 
   retellClient.on('call_ended', () => {
     console.log('[Retell] Call ended');
     callState = 'idle';
-    updateWidgetState('idle');
+    updateVoiceUI('idle');
   });
 
   retellClient.on('agent_start_talking', () => {
     console.log('[Retell] Agent started talking');
     callState = 'speaking';
-    updateWidgetState('speaking');
+    updateVoiceUI('speaking');
   });
 
   retellClient.on('agent_stop_talking', () => {
     console.log('[Retell] Agent stopped talking');
     callState = 'listening';
-    updateWidgetState('listening');
+    updateVoiceUI('listening');
   });
 
   retellClient.on('error', (error) => {
     console.error('[Retell] Error:', error);
     callState = 'idle';
-    updateWidgetState('error');
+    updateVoiceUI('error');
     showToast('Voice call error. Please try again.', 'error');
   });
 }
@@ -105,8 +278,8 @@ async function startVoiceCall() {
 
   try {
     callState = 'connecting';
-    updateWidgetState('connecting');
-    showToast('Connecting to voice assistant...', 'info');
+    updateVoiceUI('connecting');
+    showToast('Connecting to Ria...', 'info');
 
     // Get access token from backend
     const accessToken = await getAccessToken();
@@ -121,7 +294,7 @@ async function startVoiceCall() {
   } catch (error) {
     console.error('[Retell] Failed to start call:', error);
     callState = 'idle';
-    updateWidgetState('idle');
+    updateVoiceUI('idle');
 
     if (error.message.includes('RETELL_API_KEY')) {
       showToast('Voice assistant not configured. Please contact support.', 'error');
@@ -136,7 +309,7 @@ function endVoiceCall() {
   if (retellClient && callState !== 'idle') {
     retellClient.stopCall();
     callState = 'idle';
-    updateWidgetState('idle');
+    updateVoiceUI('idle');
     showToast('Call ended', 'info');
   }
 }
@@ -150,84 +323,77 @@ function toggleVoiceCall() {
   }
 }
 
-// Update widget UI based on state
-function updateWidgetState(state) {
-  const widget = document.getElementById('voice-widget');
-  const widgetButton = document.getElementById('voice-widget-btn');
-  const widgetIcon = document.getElementById('widget-icon');
-  const widgetText = document.getElementById('widget-text');
-  const pulseRing = document.getElementById('pulse-ring');
+// Update voice UI based on state
+function updateVoiceUI(state) {
+  const avatar = document.getElementById('voice-avatar');
+  const status = document.getElementById('voice-status');
+  const hint = document.getElementById('voice-hint');
+  const controlBtn = document.getElementById('voice-control-btn');
+  const avatarBtn = document.getElementById('ria-avatar-btn');
 
-  if (!widget || !widgetButton) return;
+  if (!avatar || !controlBtn) return;
 
-  // Remove all state classes
-  widget.classList.remove('idle', 'connecting', 'active', 'speaking', 'listening', 'error');
-  widget.classList.add(state);
+  // Remove all state classes from avatar
+  avatar.classList.remove('speaking', 'listening');
 
   switch (state) {
     case 'idle':
-      widgetIcon.innerHTML = microphoneIcon;
-      widgetText.textContent = 'Talk to Ria';
-      widgetButton.classList.remove('bg-green-500', 'bg-yellow-500', 'bg-blue-500', 'bg-red-500');
-      widgetButton.classList.add('bg-tvs-red');
-      if (pulseRing) pulseRing.classList.add('hidden');
+      status.textContent = 'Ready to talk';
+      hint.textContent = 'Click the button to start';
+      controlBtn.className = 'voice-control-btn start';
+      controlBtn.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+      </svg>`;
+      avatarBtn.classList.remove('active');
       break;
 
     case 'connecting':
-      widgetIcon.innerHTML = loadingIcon;
-      widgetText.textContent = 'Connecting...';
-      widgetButton.classList.remove('bg-tvs-red', 'bg-green-500', 'bg-blue-500', 'bg-red-500');
-      widgetButton.classList.add('bg-yellow-500');
-      if (pulseRing) pulseRing.classList.add('hidden');
+      status.textContent = 'Connecting...';
+      hint.textContent = 'Please wait';
+      controlBtn.className = 'voice-control-btn end';
+      controlBtn.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="animate-spin">
+        <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>`;
       break;
 
     case 'active':
     case 'listening':
-      widgetIcon.innerHTML = listeningIcon;
-      widgetText.textContent = 'Listening...';
-      widgetButton.classList.remove('bg-tvs-red', 'bg-yellow-500', 'bg-blue-500', 'bg-red-500');
-      widgetButton.classList.add('bg-green-500');
-      if (pulseRing) pulseRing.classList.remove('hidden');
+      avatar.classList.add('listening');
+      status.textContent = 'Listening...';
+      hint.textContent = 'Speak now';
+      controlBtn.className = 'voice-control-btn end';
+      controlBtn.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+        <rect x="6" y="6" width="12" height="12" rx="2"/>
+      </svg>`;
+      avatarBtn.classList.add('active');
       break;
 
     case 'speaking':
-      widgetIcon.innerHTML = speakingIcon;
-      widgetText.textContent = 'Ria is speaking...';
-      widgetButton.classList.remove('bg-tvs-red', 'bg-yellow-500', 'bg-green-500', 'bg-red-500');
-      widgetButton.classList.add('bg-blue-500');
-      if (pulseRing) pulseRing.classList.remove('hidden');
+      avatar.classList.add('speaking');
+      status.textContent = 'Ria is speaking...';
+      hint.textContent = 'Wait for her to finish';
+      controlBtn.className = 'voice-control-btn end';
+      controlBtn.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+        <rect x="6" y="6" width="12" height="12" rx="2"/>
+      </svg>`;
+      avatarBtn.classList.add('active');
       break;
 
     case 'error':
-      widgetIcon.innerHTML = errorIcon;
-      widgetText.textContent = 'Try again';
-      widgetButton.classList.remove('bg-tvs-red', 'bg-yellow-500', 'bg-green-500', 'bg-blue-500');
-      widgetButton.classList.add('bg-red-500');
-      if (pulseRing) pulseRing.classList.add('hidden');
+      status.textContent = 'Connection error';
+      hint.textContent = 'Click to try again';
+      controlBtn.className = 'voice-control-btn start';
+      controlBtn.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>`;
+      avatarBtn.classList.remove('active');
       break;
   }
 }
 
-// Icons (SVG)
-const microphoneIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-</svg>`;
-
-const loadingIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-</svg>`;
-
-const listeningIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z" />
-</svg>`;
-
-const speakingIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-</svg>`;
-
-const errorIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-</svg>`;
+// ================================================
+// UTILITIES
+// ================================================
 
 // Toast notification
 function showToast(message, type = 'info') {
@@ -235,17 +401,28 @@ function showToast(message, type = 'info') {
   document.querySelectorAll('.toast-notification').forEach(t => t.remove());
 
   const toast = document.createElement('div');
-  toast.className = `toast-notification fixed bottom-24 right-6 px-6 py-3 rounded-lg shadow-lg text-white transform transition-all duration-300 z-50 ${
+  toast.className = `toast-notification fixed bottom-24 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-lg text-white text-sm font-medium z-50 ${
     type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-gray-800'
   }`;
   toast.textContent = message;
   document.body.appendChild(toast);
 
+  // Animate in
+  toast.style.opacity = '0';
+  toast.style.transform = 'translate(-50%, 20px)';
   setTimeout(() => {
-    toast.classList.add('opacity-0', 'translate-y-2');
+    toast.style.transition = 'all 0.3s ease';
+    toast.style.opacity = '1';
+    toast.style.transform = 'translate(-50%, 0)';
+  }, 10);
+
+  // Animate out
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translate(-50%, 20px)';
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
 
 // Log initialization status
-console.log('[Retell] Script loaded, waiting for SDK...');
+console.log('[Ria] Widget script loaded');
