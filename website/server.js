@@ -547,15 +547,31 @@ app.post('/api/retell-webhook', (req, res) => {
   console.log('[Webhook] Received:', JSON.stringify(req.body, null, 2));
 
   const { event, call } = req.body;
+  const metadata = call?.metadata || req.body.metadata || {};
+  const callId = call?.call_id || req.body.call_id;
 
   // Handle function calls from Retell
-  if (event === 'call_analyzed' || req.body.function_name) {
-    const functionName = req.body.function_name || req.body.name;
-    const args = req.body.arguments || req.body.args || {};
+  // Retell sends function name as "name" and arguments as "args"
+  const functionName = req.body.name || req.body.function_name;
+  const args = req.body.args || req.body.arguments || {};
 
-    if (functionName === 'show_vehicle_details') {
-      handleShowVehicleDetails(args, call?.call_id || req.body.call_id);
-    }
+  if (functionName === 'show_vehicle_details') {
+    console.log(`[Webhook] Function call detected: ${functionName}`);
+    console.log(`[Webhook] Args:`, args);
+    console.log(`[Webhook] Call ID: ${callId}`);
+    console.log(`[Webhook] Metadata:`, metadata);
+
+    handleShowVehicleDetails(args, callId, metadata);
+
+    // Return result to Retell
+    return res.status(200).json({
+      response: `Showing details for ${args.model} on the customer's screen.`
+    });
+  }
+
+  // Handle other events (call_started, call_ended, call_analyzed)
+  if (event) {
+    console.log(`[Webhook] Event: ${event}`);
   }
 
   res.status(200).json({ success: true });
@@ -565,6 +581,8 @@ app.post('/api/retell-webhook', (req, res) => {
 app.post('/api/llm-webhook', (req, res) => {
   console.log('[LLM Webhook] Received:', JSON.stringify(req.body, null, 2));
 
+  const metadata = req.body.metadata || {};
+
   // Check for function call in the request
   const functionCall = req.body.function_call || req.body.tool_calls?.[0]?.function;
 
@@ -572,29 +590,41 @@ app.post('/api/llm-webhook', (req, res) => {
     const args = typeof functionCall.arguments === 'string'
       ? JSON.parse(functionCall.arguments)
       : functionCall.arguments;
-    handleShowVehicleDetails(args, req.body.call_id);
+    handleShowVehicleDetails(args, req.body.call_id, metadata);
   }
 
   res.status(200).json({ success: true });
 });
 
 // Handle show_vehicle_details function
-function handleShowVehicleDetails(args, callId) {
+function handleShowVehicleDetails(args, callId, metadata = {}) {
   const modelName = args.model || args.vehicle || args.name;
   console.log(`[Function] show_vehicle_details called for: ${modelName}`);
+  console.log(`[Function] Call ID: ${callId}, Session ID: ${metadata.session_id}`);
 
   const product = findProductByName(modelName);
 
   if (product) {
     console.log(`[Function] Found product: ${product.name}`);
 
-    // Broadcast to all connected clients (or specific client if call_id matches)
-    io.emit('show_product', {
+    const eventData = {
       product: product,
       timestamp: new Date().toISOString()
-    });
+    };
 
-    console.log('[Function] Broadcasted product to clients');
+    // Try to emit to specific client using session_id or call_id
+    const sessionId = metadata.session_id;
+    const targetSocketId = connectedClients.get(sessionId) || connectedClients.get(callId);
+
+    if (targetSocketId) {
+      // Emit to specific client only
+      io.to(targetSocketId).emit('show_product', eventData);
+      console.log(`[Function] Sent product to specific client: ${targetSocketId} (session: ${sessionId})`);
+    } else {
+      // Fallback: broadcast to all (for testing/demo purposes)
+      io.emit('show_product', eventData);
+      console.log('[Function] No specific client found, broadcasted to all clients');
+    }
   } else {
     console.log(`[Function] Product not found: ${modelName}`);
   }

@@ -533,6 +533,9 @@ async function getAccessToken() {
     dynamicVariables.context_prompt = contextPrompt;
   }
 
+  // Get session_id to link this call to the browser's Socket.IO connection
+  const sessionId = sessionStorage.getItem('tvs_session_id');
+
   const response = await fetch('/api/create-web-call', {
     method: 'POST',
     headers: {
@@ -540,6 +543,7 @@ async function getAccessToken() {
     },
     body: JSON.stringify({
       metadata: {
+        session_id: sessionId,  // Link voice call to browser session
         context_type: currentContext.type,
         selected_model: currentContext.name,
         user_intent: currentContext.intent
