@@ -38,9 +38,16 @@ function getPlaceholderImage(category) {
 function createProductCard(model) {
   const imageUrl = model.image_url || getPlaceholderImage(model.category);
   const categoryColor = getCategoryColor(model.category);
+  const modelData = encodeURIComponent(JSON.stringify({
+    name: model.name,
+    category: model.category,
+    price: model.ex_showroom_price_base,
+    engine: model.engine_cc,
+    mileage: model.mileage_kmpl
+  }));
 
   return `
-    <div class="bg-white rounded-xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+    <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
       <div class="relative">
         <img src="${imageUrl}" alt="${model.name}" class="w-full h-48 object-cover" onerror="this.src='${getPlaceholderImage(model.category)}'">
         <span class="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold ${categoryColor}">
@@ -72,7 +79,10 @@ function createProductCard(model) {
             <p class="text-xs text-gray-500">Starting at</p>
             <p class="text-lg font-bold text-tvs-red">${formatPrice(model.ex_showroom_price_base)}</p>
           </div>
-          <button onclick="askAboutModel('${model.name}')" class="px-4 py-2 bg-tvs-red text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
+          <button onclick="openRiaWithContext('model', '${model.name}', ${modelData})" class="px-4 py-2 bg-tvs-red text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
             Ask Ria
           </button>
         </div>
@@ -124,15 +134,6 @@ async function renderProductGrid() {
         <p class="text-xs text-gray-400 mt-2">Error: ${error.message}</p>
       </div>
     `;
-  }
-}
-
-// Ask Ria about a specific model
-function askAboutModel(modelName) {
-  // Start voice call and the user can ask about the model
-  if (typeof toggleVoiceCall === 'function') {
-    toggleVoiceCall();
-    showToast(`Ask Ria about the ${modelName}!`, 'info');
   }
 }
 

@@ -154,7 +154,7 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <!-- Feature 1 -->
+        <!-- Feature 1: Get Prices -->
         <div class="feature-card bg-white p-6 rounded-xl shadow-lg">
           <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
             <svg class="w-6 h-6 text-tvs-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,22 +163,28 @@
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-2">Get Prices</h3>
           <p class="text-gray-600 mb-4">"What's the on-road price of Apache RTR 160 in Bangalore?"</p>
-          <button onclick="toggleVoiceCall()" class="text-tvs-red font-semibold hover:underline">Ask now →</button>
+          <button onclick="openRiaWithContext('price', 'Pricing', null)" class="text-tvs-red font-semibold hover:underline flex items-center gap-1">
+            Ask Ria
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
         </div>
 
-        <!-- Feature 2 -->
+        <!-- Feature 2: Insurance -->
         <div class="feature-card bg-white p-6 rounded-xl shadow-lg">
           <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
             </svg>
           </div>
-          <h3 class="text-xl font-bold text-gray-900 mb-2">Check Availability</h3>
-          <p class="text-gray-600 mb-4">"Is Jupiter available in blue color in Mumbai?"</p>
-          <button onclick="toggleVoiceCall()" class="text-tvs-red font-semibold hover:underline">Ask now →</button>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Insurance Options</h3>
+          <p class="text-gray-600 mb-4">"Help me choose the right insurance for my new bike"</p>
+          <button onclick="openRiaWithContext('insurance', 'Insurance', null)" class="text-tvs-red font-semibold hover:underline flex items-center gap-1">
+            Ask Ria
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
         </div>
 
-        <!-- Feature 3 -->
+        <!-- Feature 3: Book Test Drive -->
         <div class="feature-card bg-white p-6 rounded-xl shadow-lg">
           <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -187,35 +193,44 @@
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-2">Book Test Drive</h3>
           <p class="text-gray-600 mb-4">"I want to test ride the Ntorq 125 this weekend"</p>
-          <button onclick="toggleVoiceCall()" class="text-tvs-red font-semibold hover:underline">Book now →</button>
+          <button onclick="openRiaWithContext('test_drive', 'Test Drive', null)" class="text-tvs-red font-semibold hover:underline flex items-center gap-1">
+            Book now
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
         </div>
 
-        <!-- Feature 4 -->
+        <!-- Feature 4: EMI & Finance -->
         <div class="feature-card bg-white p-6 rounded-xl shadow-lg">
           <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
             <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
             </svg>
           </div>
-          <h3 class="text-xl font-bold text-gray-900 mb-2">Find Showrooms</h3>
-          <p class="text-gray-600 mb-4">"Where is the nearest TVS showroom in Delhi?"</p>
-          <button onclick="toggleVoiceCall()" class="text-tvs-red font-semibold hover:underline">Find now →</button>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">EMI & Finance</h3>
+          <p class="text-gray-600 mb-4">"What's the EMI for Jupiter 125 with zero down payment?"</p>
+          <button onclick="openRiaWithContext('finance', 'Finance', null)" class="text-tvs-red font-semibold hover:underline flex items-center gap-1">
+            Calculate EMI
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
         </div>
 
-        <!-- Feature 5 -->
+        <!-- Feature 5: Service -->
         <div class="feature-card bg-white p-6 rounded-xl shadow-lg">
           <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
             <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
           </div>
-          <h3 class="text-xl font-bold text-gray-900 mb-2">Get Specs</h3>
-          <p class="text-gray-600 mb-4">"What's the mileage of iQube electric scooter?"</p>
-          <button onclick="toggleVoiceCall()" class="text-tvs-red font-semibold hover:underline">Ask now →</button>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Service & Support</h3>
+          <p class="text-gray-600 mb-4">"Book a service appointment or find service centers"</p>
+          <button onclick="openRiaWithContext('service', 'Service', null)" class="text-tvs-red font-semibold hover:underline flex items-center gap-1">
+            Get help
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
         </div>
 
-        <!-- Feature 6 -->
+        <!-- Feature 6: Current Offers -->
         <div class="feature-card bg-white p-6 rounded-xl shadow-lg">
           <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
             <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -223,8 +238,11 @@
             </svg>
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-2">Current Offers</h3>
-          <p class="text-gray-600 mb-4">"Do you have any discounts or offers right now?"</p>
-          <button onclick="toggleVoiceCall()" class="text-tvs-red font-semibold hover:underline">Check now →</button>
+          <p class="text-gray-600 mb-4">"What discounts and festive offers are available now?"</p>
+          <button onclick="openRiaWithContext('offers', 'Offers', null)" class="text-tvs-red font-semibold hover:underline flex items-center gap-1">
+            View offers
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
         </div>
       </div>
     </div>
