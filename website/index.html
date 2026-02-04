@@ -519,10 +519,122 @@
     </div>
   </div>
 
+  <!-- Product Showcase Modal -->
+  <div id="product-showcase-modal" class="product-showcase-modal">
+    <div class="product-showcase-overlay" onclick="closeProductShowcase()"></div>
+    <div class="product-showcase-content">
+      <!-- Close Button -->
+      <button class="showcase-close-btn" onclick="closeProductShowcase()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <!-- Product Header -->
+      <div class="showcase-header">
+        <span class="showcase-category" id="showcase-category">Sport</span>
+        <h2 class="showcase-title" id="showcase-title">Apache RTR 200 4V</h2>
+        <p class="showcase-tagline" id="showcase-tagline">The Ultimate Street Racing Machine</p>
+      </div>
+
+      <!-- Product Image -->
+      <div class="showcase-image-container">
+        <img id="showcase-image" src="" alt="Vehicle" class="showcase-image">
+        <div class="showcase-price-badge">
+          <span class="price-label">Starting at</span>
+          <span class="price-value" id="showcase-price">₹1.43 Lakh</span>
+          <span class="price-note">Ex-showroom</span>
+        </div>
+      </div>
+
+      <!-- Color Options -->
+      <div class="showcase-colors" id="showcase-colors">
+        <span class="colors-label">Available Colors:</span>
+        <div class="color-options" id="color-options">
+          <!-- Colors will be inserted here -->
+        </div>
+      </div>
+
+      <!-- Specs Grid -->
+      <div class="showcase-specs">
+        <div class="spec-item">
+          <div class="spec-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+          </div>
+          <div class="spec-value" id="spec-engine">197.75 cc</div>
+          <div class="spec-label">Engine</div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <div class="spec-value" id="spec-power">20.8 PS</div>
+          <div class="spec-label">Power</div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+          </div>
+          <div class="spec-value" id="spec-mileage">40 kmpl</div>
+          <div class="spec-label">Mileage</div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <div class="spec-value" id="spec-topspeed">127 kmph</div>
+          <div class="spec-label">Top Speed</div>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="showcase-features">
+        <h3 class="features-title">Key Features</h3>
+        <ul class="features-list" id="showcase-features">
+          <!-- Features will be inserted here -->
+        </ul>
+      </div>
+
+      <!-- CTA Buttons -->
+      <div class="showcase-cta">
+        <button class="cta-primary" onclick="bookTestDriveFromShowcase()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+          </svg>
+          Book Test Ride
+        </button>
+        <button class="cta-secondary" onclick="askRiaAboutShowcase()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+          </svg>
+          Ask Ria
+        </button>
+      </div>
+
+      <!-- EMI Info -->
+      <div class="showcase-emi">
+        <span class="emi-label">EMI starts at</span>
+        <span class="emi-value" id="showcase-emi">₹5,200/month</span>
+        <span class="emi-note">*T&C apply</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="js/supabase.js"></script>
   <script src="js/retell.js"></script>
   <script src="js/products.js"></script>
+  <script src="js/product-showcase.js"></script>
 
 </body>
 </html>
