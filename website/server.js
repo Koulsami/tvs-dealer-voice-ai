@@ -72,6 +72,11 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
+// Serve conversations.html
+app.get('/conversations', (req, res) => {
+  res.sendFile(path.join(__dirname, 'conversations.html'));
+});
+
 // Handle 404
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'index.html'));
