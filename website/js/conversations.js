@@ -205,6 +205,30 @@ async function fetchHourlyStats() {
   }
 }
 
+async function fetchEscalationLogs() {
+  if (!db) {
+    console.error('[fetchEscalationLogs] Supabase client not initialized');
+    return [];
+  }
+
+  try {
+    const { data, error } = await db
+      .from('escalation_logs')
+      .select('*')
+      .order('escalation_time', { ascending: false });
+
+    if (error) {
+      console.error('[fetchEscalationLogs] Error:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error('[fetchEscalationLogs] Exception:', err);
+    return [];
+  }
+}
+
 // ============ METRICS & CHARTS ============
 
 async function loadMetrics() {
@@ -307,9 +331,125 @@ async function loadMetrics() {
   // Update agent performance
   await updateAgentPerformance(calls);
 
+  // Update escalation stats
+  updateEscalationStats(calls);
+
   // Store for later use
   callLogs = calls;
   leads = leadsData;
+}
+
+function updateEscalationStats(calls) {
+  // Get escalated calls
+  const escalatedCalls = calls.filter(c => c.escalated_to_human === true || c.outcome === 'escalated');
+  const totalCalls = calls.length;
+  const escalationCount = escalatedCalls.length;
+  const escalationRate = totalCalls > 0 ? Math.round((escalationCount / totalCalls) * 100) : 0;
+
+  // Calculate average takeover time
+  const takeoverTimes = escalatedCalls.filter(c => c.human_takeover_time_seconds != null);
+  const avgTakeoverTime = takeoverTimes.length > 0
+    ? Math.round(takeoverTimes.reduce((sum, c) => sum + c.human_takeover_time_seconds, 0) / takeoverTimes.length)
+    : 0;
+
+  // Calculate resolved count (assume issue_resolved field or positive sentiment after escalation)
+  const resolvedCalls = escalatedCalls.filter(c => c.issue_resolved === true).length;
+  const pendingCalls = escalationCount - resolvedCalls;
+
+  // Post-escalation satisfaction (from escalated calls with csat_score)
+  const escalatedWithCsat = escalatedCalls.filter(c => c.csat_score != null);
+  const avgEscalationCsat = escalatedWithCsat.length > 0
+    ? (escalatedWithCsat.reduce((sum, c) => sum + c.csat_score, 0) / escalatedWithCsat.length).toFixed(1)
+    : '-';
+
+  // Update UI
+  const escalationTotal = document.getElementById('escalation-total');
+  const escalationRateEl = document.getElementById('escalation-rate');
+  const escalationAvgTime = document.getElementById('escalation-avg-time');
+  const escalationResolved = document.getElementById('escalation-resolved');
+  const escalationSatisfaction = document.getElementById('escalation-satisfaction');
+  const escalationPending = document.getElementById('escalation-pending');
+  const escalationTrend = document.getElementById('escalation-trend');
+
+  if (escalationTotal) escalationTotal.textContent = escalationCount;
+  if (escalationRateEl) escalationRateEl.textContent = escalationRate + '%';
+  if (escalationAvgTime) escalationAvgTime.textContent = avgTakeoverTime + 's';
+  if (escalationResolved) escalationResolved.textContent = resolvedCalls;
+  if (escalationSatisfaction) escalationSatisfaction.textContent = avgEscalationCsat !== '-' ? avgEscalationCsat + '/5' : '-';
+  if (escalationPending) escalationPending.textContent = pendingCalls;
+
+  // Trend indicator
+  if (escalationTrend) {
+    if (escalationRate <= 10) {
+      escalationTrend.textContent = 'Low';
+      escalationTrend.className = 'text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full';
+    } else if (escalationRate <= 20) {
+      escalationTrend.textContent = 'Normal';
+      escalationTrend.className = 'text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full';
+    } else {
+      escalationTrend.textContent = 'High';
+      escalationTrend.className = 'text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full';
+    }
+  }
+
+  // Escalation reasons breakdown
+  const reasonCounts = {};
+  escalatedCalls.forEach(c => {
+    const reason = c.escalation_reason || c.call_type || 'Other';
+    reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+  });
+
+  const sortedReasons = Object.entries(reasonCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4);
+
+  const reasonsContainer = document.getElementById('escalation-reasons');
+  if (reasonsContainer) {
+    if (sortedReasons.length === 0) {
+      reasonsContainer.innerHTML = '<p class="text-gray-500 text-sm">No escalations</p>';
+    } else {
+      const maxReasonCount = sortedReasons[0][1];
+      reasonsContainer.innerHTML = sortedReasons.map(([reason, count]) => `
+        <div class="flex items-center gap-2">
+          <div class="flex-1 bg-gray-200 rounded-full h-2">
+            <div class="bg-orange-500 h-2 rounded-full" style="width: ${(count / maxReasonCount) * 100}%"></div>
+          </div>
+          <span class="text-xs text-gray-600 w-32 truncate" title="${reason}">${reason.replace(/_/g, ' ')}</span>
+          <span class="text-xs font-medium text-gray-900 w-6">${count}</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  // Human agents handling
+  const agentCounts = {};
+  escalatedCalls.forEach(c => {
+    const agent = c.human_agent_name || 'Unassigned';
+    agentCounts[agent] = (agentCounts[agent] || 0) + 1;
+  });
+
+  const sortedAgents = Object.entries(agentCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4);
+
+  const agentsContainer = document.getElementById('human-agents-list');
+  if (agentsContainer) {
+    if (sortedAgents.length === 0) {
+      agentsContainer.innerHTML = '<p class="text-gray-500 text-sm">No agents assigned</p>';
+    } else {
+      agentsContainer.innerHTML = sortedAgents.map(([agent, count]) => `
+        <div class="flex items-center justify-between bg-gray-50 rounded px-3 py-2">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs font-bold text-blue-600">
+              ${agent.charAt(0).toUpperCase()}
+            </div>
+            <span class="text-sm text-gray-700">${agent}</span>
+          </div>
+          <span class="text-sm font-medium text-gray-900">${count} calls</span>
+        </div>
+      `).join('');
+    }
+  }
 }
 
 async function updateAgentPerformance(calls) {
