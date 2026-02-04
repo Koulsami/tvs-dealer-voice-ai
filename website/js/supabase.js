@@ -5,13 +5,13 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 console.log('[Supabase] Initializing client...');
 console.log('[Supabase] URL:', SUPABASE_URL);
 
-// Initialize Supabase client
-let supabase;
+// Initialize Supabase client (using db as variable name to avoid conflict with SDK)
+let db = null;
 try {
   if (!window.supabase) {
     console.error('[Supabase] ERROR: window.supabase is not defined. SDK not loaded.');
   } else {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     console.log('[Supabase] Client initialized successfully');
   }
 } catch (err) {
@@ -21,13 +21,13 @@ try {
 // ============ MODELS ============
 async function fetchModels() {
   console.log('[fetchModels] Starting fetch...');
-  if (!supabase) {
+  if (!db) {
     console.error('[fetchModels] ERROR: Supabase client not initialized');
     return [];
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('models')
       .select('id, name, category, engine_cc, ex_showroom_price_base, mileage_kmpl, image_url')
       .eq('is_active', true)
@@ -47,13 +47,13 @@ async function fetchModels() {
 
 // ============ SHOWROOMS ============
 async function fetchShowrooms() {
-  if (!supabase) {
+  if (!db) {
     console.error('[fetchShowrooms] Supabase client not initialized');
     return [];
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('showrooms')
       .select('*')
       .eq('is_active', true)
@@ -73,13 +73,13 @@ async function fetchShowrooms() {
 // ============ PROMOTIONS ============
 async function fetchPromotions() {
   console.log('[fetchPromotions] Starting...');
-  if (!supabase) {
+  if (!db) {
     console.error('[fetchPromotions] Supabase client not initialized');
     return [];
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('promotions')
       .select('*')
       .order('priority', { ascending: false });
@@ -97,7 +97,7 @@ async function fetchPromotions() {
 }
 
 async function addPromotion(promotion) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('promotions')
     .insert([{
       name: promotion.name,
@@ -116,7 +116,7 @@ async function addPromotion(promotion) {
 }
 
 async function updatePromotion(id, updates) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('promotions')
     .update(updates)
     .eq('id', id)
@@ -126,7 +126,7 @@ async function updatePromotion(id, updates) {
 }
 
 async function deletePromotion(id) {
-  const { error } = await supabase
+  const { error } = await db
     .from('promotions')
     .delete()
     .eq('id', id);
@@ -136,13 +136,13 @@ async function deletePromotion(id) {
 
 // ============ INVENTORY ============
 async function fetchInventory() {
-  if (!supabase) {
+  if (!db) {
     console.error('[fetchInventory] Supabase client not initialized');
     return [];
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('inventory')
       .select(`
         id,
@@ -166,7 +166,7 @@ async function fetchInventory() {
 }
 
 async function updateInventory(id, quantity) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('inventory')
     .update({ quantity_available: quantity })
     .eq('id', id)
@@ -177,13 +177,13 @@ async function updateInventory(id, quantity) {
 
 // ============ PRICING ============
 async function fetchPricing() {
-  if (!supabase) {
+  if (!db) {
     console.error('[fetchPricing] Supabase client not initialized');
     return [];
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('showroom_pricing')
       .select(`
         id,
@@ -209,7 +209,7 @@ async function fetchPricing() {
 }
 
 async function updatePricing(id, updates) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('showroom_pricing')
     .update(updates)
     .eq('id', id)
@@ -220,13 +220,13 @@ async function updatePricing(id, updates) {
 
 // ============ TEST DRIVE REQUESTS ============
 async function fetchTestDriveRequests() {
-  if (!supabase) {
+  if (!db) {
     console.error('[fetchTestDriveRequests] Supabase client not initialized');
     return [];
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('test_drive_requests')
       .select(`
         id,
@@ -254,7 +254,7 @@ async function fetchTestDriveRequests() {
 }
 
 async function updateTestDriveStatus(id, status) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('test_drive_requests')
     .update({ status })
     .eq('id', id)
@@ -265,13 +265,13 @@ async function updateTestDriveStatus(id, status) {
 
 // ============ CALLBACKS ============
 async function fetchCallbacks() {
-  if (!supabase) {
+  if (!db) {
     console.error('[fetchCallbacks] Supabase client not initialized');
     return [];
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('callbacks')
       .select('*')
       .order('created_at', { ascending: false });
@@ -288,7 +288,7 @@ async function fetchCallbacks() {
 }
 
 async function updateCallbackStatus(id, status) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('callbacks')
     .update({ status })
     .eq('id', id)
@@ -299,18 +299,18 @@ async function updateCallbackStatus(id, status) {
 
 // ============ STATS ============
 async function fetchStats() {
-  if (!supabase) {
+  if (!db) {
     console.error('[fetchStats] Supabase client not initialized');
     return { models: 0, showrooms: 0, pendingTestDrives: 0, pendingCallbacks: 0, activePromotions: 0 };
   }
 
   try {
     const [models, showrooms, testDrives, callbacks, promotions] = await Promise.all([
-      supabase.from('models').select('*', { count: 'exact', head: true }).eq('is_active', true),
-      supabase.from('showrooms').select('*', { count: 'exact', head: true }).eq('is_active', true),
-      supabase.from('test_drive_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-      supabase.from('callbacks').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-      supabase.from('promotions').select('*', { count: 'exact', head: true }).eq('is_active', true)
+      db.from('models').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      db.from('showrooms').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      db.from('test_drive_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      db.from('callbacks').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      db.from('promotions').select('*', { count: 'exact', head: true }).eq('is_active', true)
     ]);
 
     return {
@@ -328,7 +328,7 @@ async function fetchStats() {
 
 // ============ REAL-TIME SUBSCRIPTIONS ============
 function subscribeToChanges(table, callback) {
-  if (!supabase) {
+  if (!db) {
     console.error('[subscribeToChanges] Supabase client not initialized');
     return null;
   }
