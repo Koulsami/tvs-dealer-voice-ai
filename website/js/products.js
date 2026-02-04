@@ -23,15 +23,16 @@ function getCategoryColor(category) {
 }
 
 // Get placeholder image based on category
-function getPlaceholderImage(category) {
-  const images = {
-    'Sport': 'https://via.placeholder.com/400x300/E31837/FFFFFF?text=Sport+Bike',
-    'Sport Bike': 'https://via.placeholder.com/400x300/E31837/FFFFFF?text=Sport+Bike',
-    'Scooter': 'https://via.placeholder.com/400x300/1E40AF/FFFFFF?text=Scooter',
-    'Commuter': 'https://via.placeholder.com/400x300/059669/FFFFFF?text=Commuter',
-    'Electric': 'https://via.placeholder.com/400x300/7C3AED/FFFFFF?text=Electric'
+function getPlaceholderImage(category, name) {
+  // Real motorcycle images from Unsplash
+  const categoryImages = {
+    'Sport': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
+    'Sport Bike': 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=400&h=300&fit=crop',
+    'Scooter': 'https://images.unsplash.com/photo-1622185135505-2d795003b043?w=400&h=300&fit=crop',
+    'Commuter': 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=400&h=300&fit=crop',
+    'Electric': 'https://images.unsplash.com/photo-1615172282427-9a57ef2d142e?w=400&h=300&fit=crop'
   };
-  return images[category] || 'https://via.placeholder.com/400x300/6B7280/FFFFFF?text=TVS';
+  return categoryImages[category] || 'https://images.unsplash.com/photo-1558981359-219d6364c9c8?w=400&h=300&fit=crop';
 }
 
 // Create product card HTML
@@ -91,6 +92,28 @@ function createProductCard(model) {
   `;
 }
 
+// Fetch products from server API (has images)
+async function fetchProductsFromServer() {
+  try {
+    const response = await fetch('/api/products');
+    if (!response.ok) throw new Error('Server API failed');
+    const data = await response.json();
+    // Transform server data to match expected format
+    return data.map(p => ({
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      engine_cc: p.specs?.engine?.replace(/[^0-9.]/g, '') || null,
+      mileage_kmpl: p.specs?.mileage?.replace(/[^0-9]/g, '') || null,
+      ex_showroom_price_base: p.price?.ex_showroom || null,
+      image_url: p.images?.main || null
+    }));
+  } catch (err) {
+    console.log('[fetchProductsFromServer] Failed, will use Supabase:', err.message);
+    return null;
+  }
+}
+
 // Render product grid
 async function renderProductGrid() {
   console.log('[renderProductGrid] Starting...');
@@ -108,8 +131,15 @@ async function renderProductGrid() {
   `;
 
   try {
-    console.log('[renderProductGrid] Calling fetchModels...');
-    const models = await fetchModels();
+    // Try server API first (has images), fallback to Supabase
+    console.log('[renderProductGrid] Trying server API...');
+    let models = await fetchProductsFromServer();
+
+    if (!models || models.length === 0) {
+      console.log('[renderProductGrid] Falling back to Supabase...');
+      models = await fetchModels();
+    }
+
     console.log('[renderProductGrid] Got models:', models?.length || 0);
 
     if (!models || models.length === 0) {

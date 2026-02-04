@@ -634,46 +634,128 @@
 
 @media (max-width: 480px) {
   #ria-widget {
-    bottom: 16px;
-    right: 16px;
+    bottom: 12px;
+    right: 12px;
+    left: 12px;
   }
 
   #ria-avatar-btn {
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
+    position: fixed;
+    bottom: 12px;
+    right: 12px;
   }
 
   #ria-avatar-btn .avatar-img {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
   }
 
   #ria-panel {
-    width: calc(100vw - 32px);
-    max-width: 380px;
-    bottom: 75px;
-    right: 0;
-    left: 16px;
-    border-radius: 20px;
+    position: fixed;
+    width: calc(100vw - 24px);
+    max-width: none;
+    bottom: 80px;
+    right: 12px;
+    left: 12px;
+    border-radius: 16px;
+    max-height: calc(100vh - 100px);
   }
 
   .ria-header {
-    padding: 16px;
+    padding: 14px;
+  }
+
+  .ria-header .header-avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .ria-header .header-info h3 {
+    font-size: 16px;
   }
 
   .ria-mode-select {
-    padding: 12px;
+    padding: 10px;
     gap: 8px;
   }
 
   .mode-btn {
-    padding: 10px 12px;
+    padding: 8px 10px;
   }
 
   .mode-btn .mode-icon {
-    width: 38px;
-    height: 38px;
-    font-size: 18px;
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .mode-btn .mode-label {
+    font-size: 12px;
+  }
+
+  .mode-btn .mode-desc {
+    display: none;
+  }
+
+  .ria-content {
+    min-height: 200px;
+    max-height: 280px;
+  }
+
+  .chat-mode,
+  .voice-mode {
+    min-height: 200px;
+  }
+
+  .chat-messages {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .chat-message {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .chat-input-container {
+    padding: 12px;
+  }
+
+  .voice-call-area {
+    padding: 20px;
+  }
+
+  .voice-avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .voice-control-btn {
+    width: 56px;
+    height: 56px;
+  }
+
+  .quick-suggestions {
+    padding: 10px 12px;
+  }
+
+  .suggestion-chip {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 360px) {
+  #ria-panel {
+    bottom: 76px;
+    max-height: calc(100vh - 90px);
+  }
+
+  .ria-content {
+    max-height: 240px;
   }
 }
 
