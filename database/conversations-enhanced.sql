@@ -468,21 +468,166 @@ VALUES
 ON CONFLICT (date, keyword) DO UPDATE SET
     mention_count = EXCLUDED.mention_count;
 
--- Insert sample hourly stats
-INSERT INTO hourly_stats (date, hour, call_count, avg_wait_time_seconds, avg_handle_time_seconds, escalation_count)
+-- Insert sample hourly stats for multiple days
+INSERT INTO hourly_stats (date, hour, call_count, avg_wait_time_seconds, avg_handle_time_seconds, escalation_count, abandonment_count)
 VALUES
-    (CURRENT_DATE, 9, 2, 0, 200, 0),
-    (CURRENT_DATE, 10, 3, 0, 220, 0),
-    (CURRENT_DATE, 11, 4, 0, 240, 1),
-    (CURRENT_DATE, 12, 2, 0, 180, 0),
-    (CURRENT_DATE, 13, 1, 0, 150, 0),
-    (CURRENT_DATE, 14, 2, 0, 200, 0),
-    (CURRENT_DATE, 15, 3, 0, 250, 1),
-    (CURRENT_DATE, 16, 2, 0, 180, 0),
-    (CURRENT_DATE, 17, 3, 0, 220, 0),
-    (CURRENT_DATE, 18, 4, 0, 260, 1),
-    (CURRENT_DATE, 19, 2, 0, 210, 0),
-    (CURRENT_DATE, 20, 2, 0, 190, 0)
+    -- Today
+    (CURRENT_DATE, 9, 3, 0, 200, 0, 0),
+    (CURRENT_DATE, 10, 5, 0, 220, 0, 0),
+    (CURRENT_DATE, 11, 6, 0, 240, 1, 0),
+    (CURRENT_DATE, 12, 4, 0, 180, 0, 1),
+    (CURRENT_DATE, 13, 2, 0, 150, 0, 0),
+    (CURRENT_DATE, 14, 4, 0, 200, 0, 0),
+    (CURRENT_DATE, 15, 5, 0, 250, 1, 0),
+    (CURRENT_DATE, 16, 3, 0, 180, 0, 0),
+    (CURRENT_DATE, 17, 4, 0, 220, 0, 0),
+    (CURRENT_DATE, 18, 6, 0, 260, 1, 1),
+    (CURRENT_DATE, 19, 3, 0, 210, 0, 0),
+    (CURRENT_DATE, 20, 2, 0, 190, 0, 0),
+    -- Yesterday
+    (CURRENT_DATE - 1, 9, 4, 0, 195, 0, 0),
+    (CURRENT_DATE - 1, 10, 6, 0, 215, 1, 0),
+    (CURRENT_DATE - 1, 11, 7, 0, 230, 0, 1),
+    (CURRENT_DATE - 1, 12, 5, 0, 175, 0, 0),
+    (CURRENT_DATE - 1, 13, 3, 0, 160, 0, 0),
+    (CURRENT_DATE - 1, 14, 5, 0, 210, 1, 0),
+    (CURRENT_DATE - 1, 15, 6, 0, 245, 0, 0),
+    (CURRENT_DATE - 1, 16, 4, 0, 185, 0, 0),
+    (CURRENT_DATE - 1, 17, 5, 0, 225, 0, 1),
+    (CURRENT_DATE - 1, 18, 7, 0, 255, 1, 0),
+    (CURRENT_DATE - 1, 19, 4, 0, 205, 0, 0),
+    (CURRENT_DATE - 1, 20, 3, 0, 185, 0, 0)
 ON CONFLICT (date, hour) DO UPDATE SET
     call_count = EXCLUDED.call_count,
     escalation_count = EXCLUDED.escalation_count;
+
+-- =============================================
+-- ADDITIONAL COMPREHENSIVE MOCK DATA
+-- =============================================
+
+-- More conversation insights for historical data
+INSERT INTO conversation_insights (date, total_calls, total_duration_minutes, avg_call_duration_seconds, positive_calls, neutral_calls, negative_calls, avg_sentiment_score, leads_generated, bookings_made, escalations, top_topics, top_models, lead_conversion_rate)
+VALUES
+    (CURRENT_DATE, 20, 70, 210, 12, 5, 3, 0.52, 8, 3, 3,
+     '[{"topic": "pricing", "count": 12}, {"topic": "test_drive", "count": 10}, {"topic": "offers", "count": 7}, {"topic": "comparison", "count": 5}]'::jsonb,
+     '[{"model": "Apache RTR 200 4V", "count": 5}, {"model": "Jupiter 125", "count": 4}, {"model": "Ntorq 125", "count": 3}]'::jsonb, 55.00),
+    (CURRENT_DATE - 1, 25, 85, 204, 15, 7, 3, 0.58, 10, 4, 2,
+     '[{"topic": "pricing", "count": 15}, {"topic": "finance", "count": 9}, {"topic": "test_drive", "count": 8}, {"topic": "exchange", "count": 6}]'::jsonb,
+     '[{"model": "Jupiter 125", "count": 6}, {"model": "Apache RTR 160 4V", "count": 5}, {"model": "iQube Electric", "count": 4}]'::jsonb, 56.00),
+    (CURRENT_DATE - 2, 18, 62, 207, 10, 5, 3, 0.45, 7, 2, 2,
+     '[{"topic": "pricing", "count": 10}, {"topic": "mileage", "count": 7}, {"topic": "offers", "count": 5}]'::jsonb,
+     '[{"model": "Apache RTR 200 4V", "count": 4}, {"model": "Ntorq 125", "count": 3}]'::jsonb, 50.00),
+    (CURRENT_DATE - 3, 22, 75, 205, 14, 5, 3, 0.55, 9, 3, 1,
+     '[{"topic": "test_drive", "count": 11}, {"topic": "pricing", "count": 9}, {"topic": "colors", "count": 5}]'::jsonb,
+     '[{"model": "Jupiter Classic", "count": 5}, {"model": "Apache RR 310", "count": 4}]'::jsonb, 54.50),
+    (CURRENT_DATE - 4, 19, 65, 205, 11, 5, 3, 0.48, 6, 2, 3,
+     '[{"topic": "service", "count": 8}, {"topic": "pricing", "count": 7}, {"topic": "complaint", "count": 4}]'::jsonb,
+     '[{"model": "Raider 125", "count": 4}, {"model": "Star City Plus", "count": 3}]'::jsonb, 42.10),
+    (CURRENT_DATE - 5, 24, 82, 205, 16, 6, 2, 0.62, 11, 4, 1,
+     '[{"topic": "booking", "count": 12}, {"topic": "delivery", "count": 8}, {"topic": "finance", "count": 7}]'::jsonb,
+     '[{"model": "Apache RTR 200 4V", "count": 6}, {"model": "Jupiter 125", "count": 5}]'::jsonb, 62.50),
+    (CURRENT_DATE - 6, 21, 72, 206, 13, 5, 3, 0.53, 8, 3, 2,
+     '[{"topic": "pricing", "count": 11}, {"topic": "offers", "count": 8}, {"topic": "test_drive", "count": 6}]'::jsonb,
+     '[{"model": "Ntorq 125", "count": 5}, {"model": "iQube Electric", "count": 4}]'::jsonb, 52.40)
+ON CONFLICT (date) DO UPDATE SET
+    total_calls = EXCLUDED.total_calls,
+    leads_generated = EXCLUDED.leads_generated;
+
+-- Additional keyword tracking for 7 days
+INSERT INTO keywords_tracking (date, keyword, category, mention_count, sentiment_when_mentioned)
+VALUES
+    -- Day 2
+    (CURRENT_DATE - 2, 'price', 'inquiry', 10, 'neutral'),
+    (CURRENT_DATE - 2, 'mileage', 'feature', 7, 'neutral'),
+    (CURRENT_DATE - 2, 'test drive', 'action', 6, 'positive'),
+    (CURRENT_DATE - 2, 'Honda Activa', 'competitor', 3, 'neutral'),
+    (CURRENT_DATE - 2, 'offers', 'promotion', 5, 'positive'),
+    -- Day 3
+    (CURRENT_DATE - 3, 'price', 'inquiry', 9, 'neutral'),
+    (CURRENT_DATE - 3, 'test drive', 'action', 11, 'positive'),
+    (CURRENT_DATE - 3, 'colors', 'feature', 5, 'positive'),
+    (CURRENT_DATE - 3, 'Yamaha', 'competitor', 2, 'neutral'),
+    (CURRENT_DATE - 3, 'finance', 'finance', 6, 'neutral'),
+    -- Day 4
+    (CURRENT_DATE - 4, 'price', 'inquiry', 7, 'neutral'),
+    (CURRENT_DATE - 4, 'service', 'support', 8, 'neutral'),
+    (CURRENT_DATE - 4, 'complaint', 'complaint', 4, 'negative'),
+    (CURRENT_DATE - 4, 'warranty', 'support', 3, 'neutral'),
+    (CURRENT_DATE - 4, 'spare parts', 'support', 2, 'neutral'),
+    -- Day 5
+    (CURRENT_DATE - 5, 'price', 'inquiry', 14, 'neutral'),
+    (CURRENT_DATE - 5, 'booking', 'action', 12, 'positive'),
+    (CURRENT_DATE - 5, 'delivery', 'action', 8, 'positive'),
+    (CURRENT_DATE - 5, 'finance', 'finance', 7, 'neutral'),
+    (CURRENT_DATE - 5, 'insurance', 'finance', 5, 'neutral'),
+    -- Day 6
+    (CURRENT_DATE - 6, 'price', 'inquiry', 11, 'neutral'),
+    (CURRENT_DATE - 6, 'offers', 'promotion', 8, 'positive'),
+    (CURRENT_DATE - 6, 'exchange', 'action', 5, 'positive'),
+    (CURRENT_DATE - 6, 'Bajaj Pulsar', 'competitor', 4, 'neutral'),
+    (CURRENT_DATE - 6, 'Hero', 'competitor', 2, 'neutral')
+ON CONFLICT (date, keyword) DO UPDATE SET
+    mention_count = EXCLUDED.mention_count;
+
+-- Insert additional leads with varied statuses
+INSERT INTO leads (customer_name, customer_phone, customer_email, customer_city, model_interested, category_interested, budget_range, purchase_timeline, interest_level, lead_score, status, assigned_to, source, notes, next_follow_up)
+VALUES
+    ('Rajiv Mehta', '+91 98765 11111', 'rajiv.mehta@email.com', 'Pune', 'Apache RTR 200 4V', 'Sport', '1.5L - 2L', 'immediate', 'hot', 92, 'qualified', 'Sales Team A', 'voice_ai', 'Very interested, ready to visit showroom this weekend. Has budget approved.', CURRENT_DATE + 2),
+    ('Ananya Singh', '+91 98765 22222', 'ananya.s@email.com', 'Noida', 'Jupiter 125', 'Scooter', '80K - 1L', '1_week', 'hot', 88, 'contacted', 'Sales Team B', 'voice_ai', 'First-time buyer, parents funding. Prefers blue color.', CURRENT_DATE + 1),
+    ('Suresh Patel', '+91 98765 33333', 'suresh.p@email.com', 'Ahmedabad', 'iQube Electric', 'Electric', '1L - 1.2L', '1_month', 'warm', 72, 'new', NULL, 'voice_ai', 'Interested in electric but concerned about charging infrastructure.', CURRENT_DATE + 5),
+    ('Meghna Rao', '+91 98765 44444', 'meghna.rao@email.com', 'Mysore', 'Ntorq 125', 'Scooter', '90K - 1.1L', 'immediate', 'hot', 95, 'negotiating', 'Sales Team A', 'voice_ai', 'Comparing with Suzuki Access. Price negotiation in progress.', CURRENT_DATE),
+    ('Vikrant Sharma', '+91 98765 55555', 'vikrant.s@email.com', 'Lucknow', 'Apache RR 310', 'Sport', '2.5L - 3L', '3_months', 'warm', 65, 'new', NULL, 'voice_ai', 'Enthusiast, currently saving up. Wants track-focused bike.', CURRENT_DATE + 14),
+    ('Prerna Joshi', '+91 98765 66666', 'prerna.j@email.com', 'Indore', 'Jupiter Classic', 'Scooter', '75K - 90K', '1_week', 'warm', 70, 'contacted', 'Sales Team B', 'voice_ai', 'Buying for elderly parents. Comfort and ease of use priority.', CURRENT_DATE + 3),
+    ('Aakash Reddy', '+91 98765 77777', 'aakash.r@email.com', 'Hyderabad', 'Raider 125', 'Commuter', '85K - 1L', 'exploring', 'cold', 45, 'new', NULL, 'voice_ai', 'Early research phase. Comparing multiple brands.', CURRENT_DATE + 10),
+    ('Kavya Nair', '+91 98765 88888', 'kavya.n@email.com', 'Kochi', 'Apache RTR 160 4V', 'Sport', '1.2L - 1.5L', 'immediate', 'hot', 90, 'qualified', 'Sales Team A', 'voice_ai', 'Upgrading from Pulsar. Ready for test drive.', CURRENT_DATE + 1),
+    ('Rohan Gupta', '+91 98765 99999', 'rohan.g@email.com', 'Kolkata', 'Star City Plus', 'Commuter', '70K - 85K', '1_month', 'warm', 68, 'contacted', 'Sales Team B', 'voice_ai', 'Daily commuter, mileage focused. Works in IT.', CURRENT_DATE + 4),
+    ('Shreya Iyer', '+91 98766 00000', 'shreya.i@email.com', 'Chennai', 'Ntorq 125 Race Edition', 'Scooter', '1L - 1.2L', 'immediate', 'hot', 93, 'converted', 'Sales Team A', 'voice_ai', 'Booking completed! Delivery scheduled for next week.', NULL),
+    ('Manish Kumar', '+91 98766 11111', NULL, 'Patna', 'Apache RTR 200 4V', 'Sport', '1.5L - 1.8L', '1_week', 'warm', 75, 'new', NULL, 'voice_ai', 'Young professional, wants sporty commuter.', CURRENT_DATE + 3),
+    ('Divya Sharma', '+91 98766 22222', 'divya.sharma@email.com', 'Jaipur', 'Jupiter 125', 'Scooter', '80K - 95K', '1_month', 'warm', 62, 'lost', NULL, 'voice_ai', 'Chose Honda Activa due to service network concerns.', NULL)
+ON CONFLICT DO NOTHING;
+
+-- Insert additional customer profiles
+INSERT INTO customer_profiles (customer_id, name, phone, email, city, age_range, occupation, total_calls, total_duration_minutes, first_contact_date, last_contact_date, avg_sentiment_score, positive_interactions, negative_interactions, avg_csat_score, avg_nps_score, lifetime_value, segment, churn_risk_score, models_interested, preferred_category, is_lead, is_customer, has_active_booking, tags)
+VALUES
+    ('CUST_0021', 'Rajiv Mehta', '+91 98765 11111', 'rajiv.mehta@email.com', 'Pune', '26-35', 'IT Professional', 3, 12, CURRENT_DATE - 10, CURRENT_DATE - 1, 0.85, 3, 0, 4.7, 75, 180000, 'premium', 15, ARRAY['Apache RTR 200 4V'], 'Sport', true, false, false, ARRAY['high-value', 'sports-enthusiast']),
+    ('CUST_0022', 'Ananya Singh', '+91 98765 22222', 'ananya.s@email.com', 'Noida', '18-25', 'Student', 2, 8, CURRENT_DATE - 5, CURRENT_DATE - 2, 0.72, 2, 0, 4.5, 60, 95000, 'regular', 25, ARRAY['Jupiter 125'], 'Scooter', true, false, false, ARRAY['first-time-buyer', 'student']),
+    ('CUST_0023', 'Suresh Patel', '+91 98765 33333', 'suresh.p@email.com', 'Ahmedabad', '36-45', 'Business Owner', 1, 5, CURRENT_DATE - 3, CURRENT_DATE - 3, 0.55, 1, 0, 4.0, 40, 120000, 'regular', 35, ARRAY['iQube Electric'], 'Electric', true, false, false, ARRAY['eco-conscious', 'business-owner']),
+    ('CUST_0024', 'Meghna Rao', '+91 98765 44444', 'meghna.rao@email.com', 'Mysore', '26-35', 'Private Employee', 4, 15, CURRENT_DATE - 14, CURRENT_DATE, 0.88, 4, 0, 4.8, 80, 110000, 'premium', 10, ARRAY['Ntorq 125'], 'Scooter', true, false, true, ARRAY['negotiating', 'ready-to-buy']),
+    ('CUST_0025', 'Vikrant Sharma', '+91 98765 55555', 'vikrant.s@email.com', 'Lucknow', '26-35', 'IT Professional', 2, 10, CURRENT_DATE - 20, CURRENT_DATE - 5, 0.65, 2, 0, 4.2, 50, 280000, 'premium', 30, ARRAY['Apache RR 310'], 'Sport', true, false, false, ARRAY['enthusiast', 'future-buyer']),
+    ('CUST_0026', 'Prerna Joshi', '+91 98765 66666', 'prerna.j@email.com', 'Indore', '36-45', 'Government Employee', 2, 7, CURRENT_DATE - 7, CURRENT_DATE - 2, 0.70, 2, 0, 4.3, 55, 85000, 'regular', 28, ARRAY['Jupiter Classic'], 'Scooter', true, false, false, ARRAY['family-buyer', 'senior-purchase']),
+    ('CUST_0027', 'Aakash Reddy', '+91 98765 77777', 'aakash.r@email.com', 'Hyderabad', '18-25', 'Student', 1, 3, CURRENT_DATE - 2, CURRENT_DATE - 2, 0.40, 0, 0, 3.5, 20, 50000, 'regular', 55, ARRAY['Raider 125'], 'Commuter', true, false, false, ARRAY['researcher', 'price-sensitive']),
+    ('CUST_0028', 'Kavya Nair', '+91 98765 88888', 'kavya.n@email.com', 'Kochi', '26-35', 'Private Employee', 3, 11, CURRENT_DATE - 8, CURRENT_DATE - 1, 0.82, 3, 0, 4.6, 70, 150000, 'premium', 18, ARRAY['Apache RTR 160 4V'], 'Sport', true, false, false, ARRAY['upgrader', 'sports-enthusiast']),
+    ('CUST_0029', 'Rohan Gupta', '+91 98765 99999', 'rohan.g@email.com', 'Kolkata', '26-35', 'IT Professional', 2, 6, CURRENT_DATE - 12, CURRENT_DATE - 4, 0.62, 1, 0, 4.0, 45, 78000, 'regular', 32, ARRAY['Star City Plus'], 'Commuter', true, false, false, ARRAY['mileage-focused', 'daily-commuter']),
+    ('CUST_0030', 'Shreya Iyer', '+91 98766 00000', 'shreya.i@email.com', 'Chennai', '18-25', 'Private Employee', 3, 14, CURRENT_DATE - 15, CURRENT_DATE - 3, 0.92, 3, 0, 5.0, 90, 115000, 'premium', 5, ARRAY['Ntorq 125 Race Edition'], 'Scooter', false, true, true, ARRAY['converted', 'referral-potential']),
+    -- At-risk customers
+    ('CUST_0031', 'Ramesh Verma', '+91 98766 33333', 'ramesh.v@email.com', 'Delhi', '46+', 'Business Owner', 4, 18, CURRENT_DATE - 30, CURRENT_DATE - 1, -0.25, 1, 3, 2.2, -30, 200000, 'at-risk', 85, ARRAY['Jupiter 125'], 'Scooter', false, true, false, ARRAY['complaint', 'service-issue', 'retention-needed']),
+    ('CUST_0032', 'Sunita Devi', '+91 98766 44444', NULL, 'Varanasi', '36-45', 'Government Employee', 3, 12, CURRENT_DATE - 25, CURRENT_DATE - 5, -0.15, 1, 2, 2.5, -20, 90000, 'at-risk', 75, ARRAY['Star City Plus'], 'Commuter', false, true, false, ARRAY['delivery-issue', 'follow-up-needed'])
+ON CONFLICT (customer_id) DO NOTHING;
+
+-- Additional human agent escalation data
+INSERT INTO escalation_logs (reason, category, priority, ai_confidence_before, customer_sentiment_before, human_agent_id, human_agent_name, resolution_status, resolution_time_seconds, resolution_notes, customer_satisfied, escalation_time)
+VALUES
+    ('Customer requested human agent', 'sales', 'normal', 0.42, 'neutral', 'human_agent_002', 'Priya Sharma', 'resolved', 420, 'Customer wanted detailed finance options. Explained all EMI schemes. Booking initiated.', true, NOW() - INTERVAL '2 days'),
+    ('Complex pricing query', 'sales', 'normal', 0.38, 'neutral', 'human_agent_001', 'Suresh Kumar', 'resolved', 380, 'Corporate discount query. Provided special fleet pricing. Customer satisfied.', true, NOW() - INTERVAL '3 days'),
+    ('Delivery timeline complaint', 'complaint', 'high', 0.28, 'negative', 'human_agent_003', 'Anita Desai', 'resolved', 650, 'Expedited delivery arranged. Customer given priority status.', true, NOW() - INTERVAL '1 day'),
+    ('Service center complaint', 'complaint', 'urgent', 0.22, 'negative', 'human_agent_002', 'Priya Sharma', 'pending', NULL, 'Escalated to service manager. Awaiting resolution.', NULL, NOW() - INTERVAL '4 hours'),
+    ('Exchange value dispute', 'billing', 'high', 0.32, 'negative', 'human_agent_001', 'Suresh Kumar', 'resolved', 520, 'Re-evaluated exchange vehicle. Offered additional Rs 5000.', true, NOW() - INTERVAL '2 days'),
+    ('Insurance clarification', 'sales', 'normal', 0.45, 'neutral', 'human_agent_003', 'Anita Desai', 'resolved', 280, 'Explained comprehensive vs third-party. Customer opted for comprehensive.', true, NOW() - INTERVAL '5 days'),
+    ('Loan rejection concern', 'billing', 'high', 0.25, 'negative', 'human_agent_002', 'Priya Sharma', 'resolved', 720, 'Alternate finance partner arranged. Loan approved.', true, NOW() - INTERVAL '4 days'),
+    ('Accessory availability', 'sales', 'low', 0.55, 'positive', 'human_agent_001', 'Suresh Kumar', 'resolved', 180, 'Racing kit ordered from warehouse. ETA 3 days.', true, NOW() - INTERVAL '1 day'),
+    ('Test drive scheduling conflict', 'sales', 'normal', 0.40, 'neutral', 'human_agent_003', 'Anita Desai', 'resolved', 240, 'Arranged home test drive for customer convenience.', true, NOW() - INTERVAL '6 days'),
+    ('Invoice discrepancy', 'billing', 'urgent', 0.20, 'negative', 'human_agent_001', 'Suresh Kumar', 'in_progress', NULL, 'Under review with accounts team.', NULL, NOW() - INTERVAL '2 hours')
+ON CONFLICT DO NOTHING;
+
+-- Add human agents to agent_performance table
+INSERT INTO agent_performance (agent_id, agent_name, date, total_calls, total_duration_minutes, avg_handle_time_seconds, quality_score, csat_avg, first_call_resolution_rate, leads_generated, bookings_made, escalations, transfer_rate, avg_hold_time_seconds)
+VALUES
+    ('human_agent_001', 'Suresh Kumar', CURRENT_DATE, 8, 45, 337, 92, 4.5, 85.00, 3, 2, 0, 0.00, 25),
+    ('human_agent_001', 'Suresh Kumar', CURRENT_DATE - 1, 10, 55, 330, 90, 4.4, 82.00, 4, 2, 0, 0.00, 22),
+    ('human_agent_002', 'Priya Sharma', CURRENT_DATE, 6, 35, 350, 88, 4.3, 78.00, 2, 1, 0, 0.00, 30),
+    ('human_agent_002', 'Priya Sharma', CURRENT_DATE - 1, 7, 42, 360, 89, 4.4, 80.00, 3, 2, 0, 0.00, 28),
+    ('human_agent_003', 'Anita Desai', CURRENT_DATE, 5, 28, 336, 91, 4.6, 88.00, 2, 1, 0, 0.00, 20),
+    ('human_agent_003', 'Anita Desai', CURRENT_DATE - 1, 6, 32, 320, 93, 4.7, 90.00, 3, 2, 0, 0.00, 18)
+ON CONFLICT (agent_id, date) DO UPDATE SET
+    total_calls = EXCLUDED.total_calls,
+    quality_score = EXCLUDED.quality_score;
