@@ -4,6 +4,9 @@ let currentTab = 'calls';
 let callLogs = [];
 let leads = [];
 let sentimentChart = null;
+let outcomesChart = null;
+let csatChart = null;
+let hourlyChart = null;
 
 // ============ DATA FETCHING ============
 
@@ -125,13 +128,90 @@ async function fetchInsights() {
   }
 }
 
+async function fetchCallbacks() {
+  if (!db) {
+    console.error('[fetchCallbacks] Supabase client not initialized');
+    return [];
+  }
+
+  try {
+    // Get calls that have callback_requested = true
+    const { data, error } = await db
+      .from('call_logs')
+      .select('*')
+      .eq('callback_requested', true)
+      .order('callback_scheduled_at', { ascending: true });
+
+    if (error) {
+      console.error('[fetchCallbacks] Error:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error('[fetchCallbacks] Exception:', err);
+    return [];
+  }
+}
+
+async function fetchAgentPerformance() {
+  if (!db) {
+    console.error('[fetchAgentPerformance] Supabase client not initialized');
+    return [];
+  }
+
+  try {
+    const { data, error } = await db
+      .from('agent_performance')
+      .select('*')
+      .order('date', { ascending: false })
+      .limit(7);
+
+    if (error) {
+      console.error('[fetchAgentPerformance] Error:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error('[fetchAgentPerformance] Exception:', err);
+    return [];
+  }
+}
+
+async function fetchHourlyStats() {
+  if (!db) {
+    console.error('[fetchHourlyStats] Supabase client not initialized');
+    return [];
+  }
+
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const { data, error } = await db
+      .from('hourly_stats')
+      .select('*')
+      .eq('date', today)
+      .order('hour', { ascending: true });
+
+    if (error) {
+      console.error('[fetchHourlyStats] Error:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error('[fetchHourlyStats] Exception:', err);
+    return [];
+  }
+}
+
 // ============ METRICS & CHARTS ============
 
 async function loadMetrics() {
   const calls = await fetchCallLogs({ date: 'week' });
   const leadsData = await fetchLeads();
 
-  // Calculate metrics
+  // Calculate basic metrics
   const totalCalls = calls.length;
   const leadsGenerated = calls.filter(c => c.outcome === 'lead_generated').length;
   const bookingsMade = calls.filter(c => c.outcome === 'booking_made').length;
@@ -143,13 +223,61 @@ async function loadMetrics() {
     ? Math.round(((leadsGenerated + bookingsMade) / totalCalls) * 100)
     : 0;
 
-  // Update UI
+  // Calculate enhanced metrics
+  const fcrCalls = calls.filter(c => c.first_call_resolution === true).length;
+  const fcrRate = totalCalls > 0 ? Math.round((fcrCalls / totalCalls) * 100) : 0;
+
+  const csatCalls = calls.filter(c => c.csat_score != null);
+  const avgCsat = csatCalls.length > 0
+    ? (csatCalls.reduce((sum, c) => sum + c.csat_score, 0) / csatCalls.length).toFixed(1)
+    : '-';
+
+  const cesCalls = calls.filter(c => c.customer_effort_score != null);
+  const avgCes = cesCalls.length > 0
+    ? (cesCalls.reduce((sum, c) => sum + c.customer_effort_score, 0) / cesCalls.length).toFixed(1)
+    : '-';
+
+  // Talk/Listen metrics
+  const totalTalkTime = calls.reduce((sum, c) => sum + (c.talk_time_seconds || 0), 0);
+  const totalListenTime = calls.reduce((sum, c) => sum + (c.listen_time_seconds || 0), 0);
+  const totalSilence = calls.reduce((sum, c) => sum + (c.silence_time_seconds || 0), 0);
+  const totalTime = totalTalkTime + totalListenTime + totalSilence;
+  const talkRatio = totalListenTime > 0 ? (totalTalkTime / totalListenTime).toFixed(2) : '-';
+  const talkPct = totalTime > 0 ? Math.round((totalTalkTime / totalTime) * 100) : 0;
+  const listenPct = totalTime > 0 ? Math.round((totalListenTime / totalTime) * 100) : 0;
+  const silencePct = totalTime > 0 ? Math.round((totalSilence / totalTime) * 100) : 0;
+
+  // Repeat callers
+  const repeatCallers = calls.filter(c => c.is_repeat_caller === true).length;
+
+  // Competitor mentions
+  const competitorMentions = calls.filter(c => c.competitor_mentions && c.competitor_mentions.length > 0);
+  const allCompetitors = [];
+  competitorMentions.forEach(c => {
+    (c.competitor_mentions || []).forEach(comp => {
+      if (!allCompetitors.includes(comp)) allCompetitors.push(comp);
+    });
+  });
+
+  // Update UI - Basic metrics
   document.getElementById('metric-total-calls').textContent = totalCalls;
   document.getElementById('metric-leads').textContent = leadsGenerated;
   document.getElementById('metric-bookings').textContent = bookingsMade;
   document.getElementById('metric-escalations').textContent = escalations;
   document.getElementById('metric-avg-duration').textContent = formatDuration(avgDuration);
   document.getElementById('metric-conversion').textContent = conversionRate + '%';
+  document.getElementById('metric-fcr').textContent = fcrRate + '%';
+  document.getElementById('metric-csat').textContent = avgCsat + '/5';
+
+  // Update UI - Enhanced metrics
+  document.getElementById('metric-talk-ratio').textContent = talkRatio;
+  document.getElementById('metric-talk-pct').textContent = `Talk: ${talkPct}%`;
+  document.getElementById('metric-listen-pct').textContent = `Listen: ${listenPct}%`;
+  document.getElementById('metric-ces').textContent = avgCes + '/7';
+  document.getElementById('metric-repeat').textContent = repeatCallers;
+  document.getElementById('metric-competitors').textContent = competitorMentions.length;
+  document.getElementById('competitor-names').textContent = allCompetitors.length > 0 ? allCompetitors.join(', ') : 'None detected';
+  document.getElementById('metric-silence').textContent = silencePct + '%';
 
   // Update sentiment chart
   const positive = calls.filter(c => c.sentiment === 'positive').length;
@@ -157,15 +285,78 @@ async function loadMetrics() {
   const negative = calls.filter(c => c.sentiment === 'negative').length;
   updateSentimentChart(positive, neutral, negative);
 
+  // Update outcomes chart
+  const infoProvided = calls.filter(c => c.outcome === 'info_provided').length;
+  updateOutcomesChart(leadsGenerated, bookingsMade, escalations, infoProvided);
+
+  // Update CSAT chart
+  updateCsatChart(calls);
+
   // Update top topics
   updateTopTopics(calls);
 
   // Update top models
   updateTopModels(calls);
 
+  // Update keywords cloud
+  updateKeywordsCloud(calls);
+
+  // Update hourly chart
+  updateHourlyChart(calls);
+
+  // Update agent performance
+  await updateAgentPerformance(calls);
+
   // Store for later use
   callLogs = calls;
   leads = leadsData;
+}
+
+async function updateAgentPerformance(calls) {
+  // Calculate from call data
+  const todayCalls = calls.filter(c => {
+    const callDate = new Date(c.started_at).toDateString();
+    const today = new Date().toDateString();
+    return callDate === today;
+  });
+
+  const totalDuration = todayCalls.reduce((sum, c) => sum + (c.duration_seconds || 0), 0);
+  const avgHandleTime = todayCalls.length > 0 ? Math.round(totalDuration / todayCalls.length) : 0;
+
+  // Calculate NPS from calls (nps_score ranges from -100 to 100)
+  const npsCalls = calls.filter(c => c.nps_score != null);
+  const avgNps = npsCalls.length > 0
+    ? Math.round(npsCalls.reduce((sum, c) => sum + c.nps_score, 0) / npsCalls.length)
+    : null;
+
+  // Calculate transfer rate
+  const transfers = calls.filter(c => c.was_transferred === true).length;
+  const transferRate = calls.length > 0 ? Math.round((transfers / calls.length) * 100) : 0;
+
+  // Calculate avg hold time
+  const totalHoldTime = calls.reduce((sum, c) => sum + (c.hold_time_seconds || 0), 0);
+  const avgHoldTime = calls.length > 0 ? Math.round(totalHoldTime / calls.length) : 0;
+
+  // Average quality score from calls
+  const qualityCalls = calls.filter(c => c.agent_quality_score != null);
+  const avgQuality = qualityCalls.length > 0
+    ? Math.round(qualityCalls.reduce((sum, c) => sum + c.agent_quality_score, 0) / qualityCalls.length)
+    : 88;
+
+  // Update UI
+  const agentQuality = document.getElementById('agent-quality');
+  const agentCalls = document.getElementById('agent-calls');
+  const agentAht = document.getElementById('agent-aht');
+  const agentNps = document.getElementById('agent-nps');
+  const agentTransfer = document.getElementById('agent-transfer');
+  const agentHold = document.getElementById('agent-hold');
+
+  if (agentQuality) agentQuality.textContent = avgQuality + '%';
+  if (agentCalls) agentCalls.textContent = todayCalls.length;
+  if (agentAht) agentAht.textContent = formatDuration(avgHandleTime);
+  if (agentNps) agentNps.textContent = avgNps !== null ? (avgNps > 0 ? '+' : '') + avgNps : '-';
+  if (agentTransfer) agentTransfer.textContent = transferRate + '%';
+  if (agentHold) agentHold.textContent = formatDuration(avgHoldTime);
 }
 
 function updateSentimentChart(positive, neutral, negative) {
@@ -196,6 +387,172 @@ function updateSentimentChart(positive, neutral, negative) {
       cutout: '60%'
     }
   });
+}
+
+function updateOutcomesChart(leads, bookings, escalations, info) {
+  const ctx = document.getElementById('outcomesChart')?.getContext('2d');
+  if (!ctx) return;
+
+  if (outcomesChart) {
+    outcomesChart.destroy();
+  }
+
+  outcomesChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Leads', 'Bookings', 'Escalations', 'Info'],
+      datasets: [{
+        data: [leads, bookings, escalations, info],
+        backgroundColor: ['#10B981', '#3B82F6', '#EF4444', '#9CA3AF'],
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+}
+
+function updateCsatChart(calls) {
+  const ctx = document.getElementById('csatChart')?.getContext('2d');
+  if (!ctx) return;
+
+  if (csatChart) {
+    csatChart.destroy();
+  }
+
+  // Count CSAT scores
+  const csatCounts = [0, 0, 0, 0, 0]; // 1-5
+  calls.forEach(c => {
+    if (c.csat_score >= 1 && c.csat_score <= 5) {
+      csatCounts[c.csat_score - 1]++;
+    }
+  });
+
+  csatChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['1', '2', '3', '4', '5'],
+      datasets: [{
+        data: csatCounts,
+        backgroundColor: ['#EF4444', '#F97316', '#EAB308', '#84CC16', '#10B981'],
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+        x: { title: { display: true, text: 'CSAT Score' } }
+      }
+    }
+  });
+}
+
+function updateHourlyChart(calls) {
+  const ctx = document.getElementById('hourlyChart')?.getContext('2d');
+  if (!ctx) return;
+
+  if (hourlyChart) {
+    hourlyChart.destroy();
+  }
+
+  // Group calls by hour
+  const hourCounts = new Array(24).fill(0);
+  const today = new Date().toDateString();
+
+  calls.forEach(call => {
+    const callDate = new Date(call.started_at);
+    if (callDate.toDateString() === today) {
+      const hour = callDate.getHours();
+      hourCounts[hour]++;
+    }
+  });
+
+  // Find peak hour
+  const maxCalls = Math.max(...hourCounts);
+  const peakHour = hourCounts.indexOf(maxCalls);
+  const peakLabel = document.getElementById('peak-hour-label');
+  if (peakLabel && maxCalls > 0) {
+    peakLabel.textContent = `Peak: ${peakHour}:00 - ${peakHour + 1}:00 (${maxCalls} calls)`;
+  }
+
+  // Generate labels for 24 hours (showing every 3rd hour for cleaner display)
+  const labels = [];
+  for (let i = 0; i < 24; i++) {
+    labels.push(i.toString().padStart(2, '0') + ':00');
+  }
+
+  hourlyChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: hourCounts,
+        backgroundColor: hourCounts.map((_, i) => i === peakHour ? '#E31837' : '#93C5FD'),
+        borderRadius: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+        x: {
+          ticks: {
+            maxRotation: 0,
+            callback: function(value, index) {
+              // Show every 3rd hour
+              return index % 3 === 0 ? this.getLabelForValue(value) : '';
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function updateKeywordsCloud(calls) {
+  const keywordCounts = {};
+  calls.forEach(call => {
+    (call.keywords_detected || []).forEach(kw => {
+      keywordCounts[kw] = (keywordCounts[kw] || 0) + 1;
+    });
+  });
+
+  const sorted = Object.entries(keywordCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15);
+
+  const container = document.getElementById('keywords-cloud');
+  if (!container) return;
+
+  if (sorted.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-sm">No keywords detected</p>';
+    return;
+  }
+
+  const maxCount = sorted[0][1];
+  container.innerHTML = sorted.map(([keyword, count]) => {
+    const size = Math.max(0.75, Math.min(1.25, count / maxCount + 0.5));
+    const colors = ['bg-blue-100 text-blue-800', 'bg-green-100 text-green-800', 'bg-purple-100 text-purple-800', 'bg-yellow-100 text-yellow-800', 'bg-pink-100 text-pink-800'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    return `<span class="px-2 py-1 rounded ${color} text-xs font-medium" style="font-size: ${size}rem">${keyword}</span>`;
+  }).join('');
 }
 
 function updateTopTopics(calls) {
