@@ -569,6 +569,45 @@ app.post('/api/retell-webhook', (req, res) => {
     });
   }
 
+  if (functionName === 'navigate_product_section') {
+    const modelName = args.model || args.vehicle || args.name;
+    const section = args.section; // "overview", "pricing", "specifications", "colors", "features"
+
+    console.log(`[Webhook] navigate_product_section: ${modelName} -> ${section}`);
+
+    // If a model is specified and it's different from what's currently shown, show it first
+    if (modelName) {
+      const product = findProductByName(modelName);
+      if (product) {
+        const sessionId = metadata.session_id;
+        const targetSocketId = connectedClients.get(sessionId) || connectedClients.get(callId);
+
+        const eventData = { product: product, section: section, timestamp: new Date().toISOString() };
+
+        if (targetSocketId) {
+          io.to(targetSocketId).emit('show_product_section', eventData);
+        } else {
+          io.emit('show_product_section', eventData);
+        }
+      }
+    } else if (section) {
+      // No model specified, just navigate to section on current product
+      const sessionId = metadata.session_id;
+      const targetSocketId = connectedClients.get(sessionId) || connectedClients.get(callId);
+      const eventData = { section: section, timestamp: new Date().toISOString() };
+
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('navigate_section', eventData);
+      } else {
+        io.emit('navigate_section', eventData);
+      }
+    }
+
+    return res.status(200).json({
+      response: `Showing ${section || 'details'} for ${modelName || 'the vehicle'} on the customer's screen.`
+    });
+  }
+
   // Handle other events (call_started, call_ended, call_analyzed)
   if (event) {
     console.log(`[Webhook] Event: ${event}`);

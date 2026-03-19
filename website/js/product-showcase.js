@@ -39,6 +39,26 @@ function initializeSocket() {
     }
   });
 
+  // Listen for product + section navigation (shows product then navigates to section)
+  socket.on('show_product_section', (data) => {
+    console.log('[Socket.IO] Received show_product_section event:', data);
+    if (data.product) {
+      showProductShowcase(data.product);
+      if (data.section) {
+        // Defer section navigation until modal has rendered
+        setTimeout(() => navigateToSection(data.section), 100);
+      }
+    }
+  });
+
+  // Listen for section-only navigation (no product change)
+  socket.on('navigate_section', (data) => {
+    console.log('[Socket.IO] Received navigate_section event:', data);
+    if (data.section) {
+      navigateToSection(data.section);
+    }
+  });
+
   socket.on('connect_error', (error) => {
     console.error('[Socket.IO] Connection error:', error);
   });
