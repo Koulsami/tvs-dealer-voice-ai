@@ -532,110 +532,276 @@
   <div id="product-showcase-modal" class="product-showcase-modal">
     <div class="product-showcase-overlay" onclick="closeProductShowcase()"></div>
     <div class="product-showcase-content">
-      <!-- Close Button -->
-      <button class="showcase-close-btn" onclick="closeProductShowcase()">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
 
-      <!-- Product Header -->
-      <div class="showcase-header">
-        <span class="showcase-category" id="showcase-category">Sport</span>
-        <h2 class="showcase-title" id="showcase-title">Apache RTR 200 4V</h2>
-        <p class="showcase-tagline" id="showcase-tagline">The Ultimate Street Racing Machine</p>
-      </div>
-
-      <!-- Product Image -->
-      <div class="showcase-image-container">
-        <img id="showcase-image" src="" alt="Vehicle" class="showcase-image">
-      </div>
-
-      <!-- Price Badge (below image) -->
-      <div class="showcase-price-badge">
-        <span class="price-label">Starting at</span>
-        <span class="price-value" id="showcase-price">₹1.43 Lakh</span>
-        <span class="price-note">Ex-showroom</span>
-      </div>
-
-      <!-- Color Options -->
-      <div class="showcase-colors" id="showcase-colors">
-        <span class="colors-label">Available Colors:</span>
-        <div class="color-options" id="color-options">
-          <!-- Colors will be inserted here -->
+      <!-- Sticky Header -->
+      <div class="showcase-sticky-header sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+        <div class="flex items-center gap-3">
+          <h2 class="showcase-title text-xl font-bold text-gray-900" id="showcase-title">Apache RTR 200 4V</h2>
+          <span class="showcase-category inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-700" id="showcase-category">Sport</span>
         </div>
-      </div>
-
-      <!-- Specs Grid -->
-      <div class="showcase-specs">
-        <div class="spec-item">
-          <div class="spec-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 6v6l4 2"/>
-            </svg>
-          </div>
-          <div class="spec-value" id="spec-engine">197.75 cc</div>
-          <div class="spec-label">Engine</div>
-        </div>
-        <div class="spec-item">
-          <div class="spec-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
-          </div>
-          <div class="spec-value" id="spec-power">20.8 PS</div>
-          <div class="spec-label">Power</div>
-        </div>
-        <div class="spec-item">
-          <div class="spec-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-            </svg>
-          </div>
-          <div class="spec-value" id="spec-mileage">40 kmpl</div>
-          <div class="spec-label">Mileage</div>
-        </div>
-        <div class="spec-item">
-          <div class="spec-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-            </svg>
-          </div>
-          <div class="spec-value" id="spec-topspeed">127 kmph</div>
-          <div class="spec-label">Top Speed</div>
-        </div>
-      </div>
-
-      <!-- Features -->
-      <div class="showcase-features">
-        <h3 class="features-title">Key Features</h3>
-        <ul class="features-list" id="showcase-features">
-          <!-- Features will be inserted here -->
-        </ul>
-      </div>
-
-      <!-- CTA Buttons -->
-      <div class="showcase-cta">
-        <button class="cta-primary" onclick="bookTestDriveFromShowcase()">
+        <button class="showcase-close-btn flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors" onclick="closeProductShowcase()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+            <path d="M18 6L6 18M6 6l12 12"/>
           </svg>
-          Book Test Ride
-        </button>
-        <button class="cta-secondary" onclick="askRiaAboutShowcase()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-          </svg>
-          Ask Ria
         </button>
       </div>
 
-      <!-- EMI Info -->
-      <div class="showcase-emi">
-        <span class="emi-label">EMI starts at</span>
-        <span class="emi-value" id="showcase-emi">₹5,200/month</span>
-        <span class="emi-note">*T&C apply</span>
+      <!-- Tab Navigation -->
+      <nav class="showcase-tab-nav sticky top-[65px] z-10 bg-white border-b border-gray-200 px-6 flex gap-1 overflow-x-auto">
+        <button class="showcase-tab active px-4 py-3 text-sm font-medium border-b-2 border-red-600 text-red-600 whitespace-nowrap" data-section="overview">Overview</button>
+        <button class="showcase-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap" data-section="pricing">Pricing</button>
+        <button class="showcase-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap" data-section="specifications">Specifications</button>
+        <button class="showcase-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap" data-section="colors">Colors</button>
+        <button class="showcase-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap" data-section="features">Features</button>
+      </nav>
+
+      <!-- Tab Content Sections -->
+      <div class="showcase-tab-content px-6 py-6">
+
+        <!-- === Overview Section === -->
+        <section class="showcase-section" data-section-id="overview">
+          <!-- Hero Image -->
+          <div class="showcase-image-container flex justify-center mb-6">
+            <img id="showcase-image" src="" alt="Vehicle" class="showcase-image max-h-72 object-contain">
+          </div>
+
+          <!-- Price Badge -->
+          <div class="showcase-price-badge flex items-center justify-center gap-2 mb-6 bg-gray-50 rounded-xl py-3 px-4">
+            <span class="price-label text-sm text-gray-500">Starting at</span>
+            <span class="price-value text-2xl font-bold text-gray-900" id="showcase-price">₹1.43 Lakh</span>
+            <span class="price-note text-xs text-gray-400">Ex-showroom</span>
+          </div>
+
+          <!-- Quick Specs Grid (4 stats) -->
+          <div class="showcase-specs grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <div class="spec-item bg-gray-50 rounded-xl p-4 text-center">
+              <div class="spec-icon flex justify-center mb-2 text-gray-400">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
+              </div>
+              <div class="spec-value font-bold text-gray-900" id="spec-engine">197.75 cc</div>
+              <div class="spec-label text-xs text-gray-500">Engine</div>
+            </div>
+            <div class="spec-item bg-gray-50 rounded-xl p-4 text-center">
+              <div class="spec-icon flex justify-center mb-2 text-gray-400">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+              </div>
+              <div class="spec-value font-bold text-gray-900" id="spec-power">20.8 PS</div>
+              <div class="spec-label text-xs text-gray-500">Power</div>
+            </div>
+            <div class="spec-item bg-gray-50 rounded-xl p-4 text-center">
+              <div class="spec-icon flex justify-center mb-2 text-gray-400">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+              </div>
+              <div class="spec-value font-bold text-gray-900" id="spec-mileage">40 kmpl</div>
+              <div class="spec-label text-xs text-gray-500">Mileage</div>
+            </div>
+            <div class="spec-item bg-gray-50 rounded-xl p-4 text-center">
+              <div class="spec-icon flex justify-center mb-2 text-gray-400">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+              </div>
+              <div class="spec-value font-bold text-gray-900" id="spec-topspeed">127 kmph</div>
+              <div class="spec-label text-xs text-gray-500">Top Speed</div>
+            </div>
+          </div>
+
+          <!-- EMI Badge -->
+          <div class="showcase-emi flex items-center justify-center gap-2 mb-6 bg-green-50 rounded-lg py-2 px-4">
+            <span class="emi-label text-sm text-green-700">EMI starts at</span>
+            <span class="emi-value font-bold text-green-800" id="showcase-emi">₹5,200/month</span>
+            <span class="emi-note text-xs text-green-600">*T&C apply</span>
+          </div>
+
+          <!-- CTA Buttons -->
+          <div class="showcase-cta flex gap-3">
+            <button class="cta-primary flex-1 flex items-center justify-center gap-2 bg-red-600 text-white py-3 px-4 rounded-xl font-semibold hover:bg-red-700 transition-colors" onclick="bookTestDriveFromShowcase()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+              </svg>
+              Book Test Ride
+            </button>
+            <button class="cta-secondary flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-800 py-3 px-4 rounded-xl font-semibold hover:bg-gray-200 transition-colors" onclick="askRiaAboutShowcase()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              Ask Ria
+            </button>
+          </div>
+        </section>
+
+        <!-- === Pricing Section === -->
+        <section class="showcase-section hidden" data-section-id="pricing">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">On-Road Price by City</h3>
+
+          <!-- City-wise Price Table -->
+          <div class="showcase-price-table overflow-hidden rounded-xl border border-gray-200 mb-6">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="text-left px-4 py-3 font-semibold text-gray-700">City</th>
+                  <th class="text-right px-4 py-3 font-semibold text-gray-700">On-Road Price</th>
+                </tr>
+              </thead>
+              <tbody id="showcase-city-prices">
+                <tr class="border-t border-gray-100">
+                  <td class="px-4 py-3 text-gray-800">Bangalore</td>
+                  <td class="px-4 py-3 text-right font-semibold text-gray-900">—</td>
+                </tr>
+                <tr class="border-t border-gray-100 bg-gray-50">
+                  <td class="px-4 py-3 text-gray-800">Mumbai</td>
+                  <td class="px-4 py-3 text-right font-semibold text-gray-900">—</td>
+                </tr>
+                <tr class="border-t border-gray-100">
+                  <td class="px-4 py-3 text-gray-800">Delhi</td>
+                  <td class="px-4 py-3 text-right font-semibold text-gray-900">—</td>
+                </tr>
+                <tr class="border-t border-gray-100 bg-gray-50">
+                  <td class="px-4 py-3 text-gray-800">Chennai</td>
+                  <td class="px-4 py-3 text-right font-semibold text-gray-900">—</td>
+                </tr>
+                <tr class="border-t border-gray-100">
+                  <td class="px-4 py-3 text-gray-800">Hyderabad</td>
+                  <td class="px-4 py-3 text-right font-semibold text-gray-900">—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Price Breakdown -->
+          <div class="showcase-price-breakdown bg-gray-50 rounded-xl p-5 mb-6">
+            <h4 class="font-semibold text-gray-800 mb-3">Price Breakdown</h4>
+            <div class="flex justify-between py-2 border-b border-gray-200">
+              <span class="text-gray-600">Ex-Showroom Price</span>
+              <span class="font-semibold text-gray-900" id="showcase-exshowroom-price">—</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-gray-200">
+              <span class="text-gray-600">On-Road Price (approx.)</span>
+              <span class="font-semibold text-gray-900" id="showcase-onroad-price">—</span>
+            </div>
+            <div class="flex justify-between py-2 text-xs text-gray-400">
+              <span>Includes RTO, insurance & other charges</span>
+            </div>
+          </div>
+
+          <!-- EMI Info -->
+          <div class="showcase-pricing-emi bg-green-50 rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-1">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-600">
+                <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span class="font-semibold text-green-800">EMI Available</span>
+            </div>
+            <p class="text-sm text-green-700">Starting at <strong id="showcase-emi-pricing">₹5,200/month</strong> with flexible tenure options. Zero down payment available on select models.</p>
+          </div>
+        </section>
+
+        <!-- === Specifications Section === -->
+        <section class="showcase-section hidden" data-section-id="specifications">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">Full Specifications</h3>
+
+          <div class="showcase-full-specs grid grid-cols-1 sm:grid-cols-2 gap-3" id="showcase-full-specs">
+            <!-- Standard (petrol) specs -->
+            <div class="spec-row flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3" data-spec="engine">
+              <span class="text-sm text-gray-500">Engine</span>
+              <span class="text-sm font-semibold text-gray-900" id="spec-full-engine">—</span>
+            </div>
+            <div class="spec-row flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3" data-spec="power">
+              <span class="text-sm text-gray-500">Power</span>
+              <span class="text-sm font-semibold text-gray-900" id="spec-full-power">—</span>
+            </div>
+            <div class="spec-row flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3" data-spec="torque">
+              <span class="text-sm text-gray-500">Torque</span>
+              <span class="text-sm font-semibold text-gray-900" id="spec-full-torque">—</span>
+            </div>
+            <div class="spec-row flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3" data-spec="mileage">
+              <span class="text-sm text-gray-500">Mileage</span>
+              <span class="text-sm font-semibold text-gray-900" id="spec-full-mileage">—</span>
+            </div>
+            <div class="spec-row flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3" data-spec="top_speed">
+              <span class="text-sm text-gray-500">Top Speed</span>
+              <span class="text-sm font-semibold text-gray-900" id="spec-full-topspeed">—</span>
+            </div>
+            <div class="spec-row flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3" data-spec="fuel_tank">
+              <span class="text-sm text-gray-500">Fuel Tank</span>
+              <span class="text-sm font-semibold text-gray-900" id="spec-full-fueltank">—</span>
+            </div>
+            <div class="spec-row flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3" data-spec="weight">
+              <span class="text-sm text-gray-500">Weight</span>
+              <span class="text-sm font-semibold text-gray-900" id="spec-full-weight">—</span>
+            </div>
+            <div class="spec-row flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3" data-spec="seat_height">
+              <span class="text-sm text-gray-500">Seat Height</span>
+              <span class="text-sm font-semibold text-gray-900" id="spec-full-seatheight">—</span>
+            </div>
+            <div class="spec-row flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3" data-spec="ground_clearance">
+              <span class="text-sm text-gray-500">Ground Clearance</span>
+              <span class="text-sm font-semibold text-gray-900" id="spec-full-groundclearance">—</span>
+            </div>
+            <div class="spec-row flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3" data-spec="transmission">
+              <span class="text-sm text-gray-500">Transmission</span>
+              <span class="text-sm font-semibold text-gray-900" id="spec-full-transmission">—</span>
+            </div>
+
+            <!-- Electric-specific specs (hidden by default) -->
+            <div class="spec-row hidden flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3" data-spec="motor">
+              <span class="text-sm text-gray-500">Motor</span>
+              <span class="text-sm font-semibold text-gray-900" id="spec-full-motor">—</span>
+            </div>
+            <div class="spec-row hidden flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3" data-spec="battery">
+              <span class="text-sm text-gray-500">Battery</span>
+              <span class="text-sm font-semibold text-gray-900" id="spec-full-battery">—</span>
+            </div>
+            <div class="spec-row hidden flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3" data-spec="range">
+              <span class="text-sm text-gray-500">Range</span>
+              <span class="text-sm font-semibold text-gray-900" id="spec-full-range">—</span>
+            </div>
+            <div class="spec-row hidden flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3" data-spec="charging_time">
+              <span class="text-sm text-gray-500">Charging Time</span>
+              <span class="text-sm font-semibold text-gray-900" id="spec-full-chargingtime">—</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- === Colors Section === -->
+        <section class="showcase-section hidden" data-section-id="colors">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">Available Colors</h3>
+
+          <div class="showcase-color-grid flex flex-wrap gap-4" id="showcase-color-swatches">
+            <!-- Color swatches will be inserted here by JS -->
+            <!-- Example swatch structure:
+            <button class="showcase-color-swatch flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-transparent hover:border-gray-200 transition-colors" data-color="#E31837">
+              <span class="w-12 h-12 rounded-full border-2 border-gray-200 shadow-inner" style="background-color: #E31837;"></span>
+              <span class="text-xs font-medium text-gray-700">Racing Red</span>
+            </button>
+            -->
+          </div>
+        </section>
+
+        <!-- === Features Section === -->
+        <section class="showcase-section hidden" data-section-id="features">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">Key Features</h3>
+
+          <div class="showcase-feature-list flex flex-col gap-3" id="showcase-feature-cards">
+            <!-- Feature cards will be inserted here by JS -->
+            <!-- Example feature card structure:
+            <div class="showcase-feature-card flex items-start gap-3 bg-gray-50 rounded-xl px-4 py-3">
+              <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-sm text-gray-800">Dual-channel ABS</span>
+            </div>
+            -->
+          </div>
+        </section>
+
       </div>
     </div>
   </div>
