@@ -225,39 +225,43 @@ async function renderProductGrid() {
 
 // Handle product card click — open showcase modal with full product data
 async function handleProductCardClick(productName) {
-  console.log('[handleProductCardClick] productName:', productName, '| rawProducts length:', window.productCache.rawProducts?.length ?? 0);
+  console.log('[handleProductCardClick] Called with:', productName);
+  console.log('[handleProductCardClick] rawProducts:', window.productCache.rawProducts?.length, 'products:', window.productCache.products?.length);
+
   // Try rawProducts first (full data from server API)
-  if (window.productCache.rawProducts) {
+  if (window.productCache.rawProducts && window.productCache.rawProducts.length > 0) {
     const raw = window.productCache.rawProducts.find(p =>
-      p.name.toLowerCase() === productName.toLowerCase()
+      p.name.toLowerCase().includes(productName.toLowerCase()) ||
+      productName.toLowerCase().includes(p.name.toLowerCase())
     );
     if (raw) {
+      console.log('[handleProductCardClick] Found in rawProducts:', raw.name);
       showProductShowcase(raw);
       return;
     }
   }
 
-  // Fallback: find the model in cached products and fetch full data by ID
-  const model = window.productCache.products.find(p =>
-    p.name.toLowerCase() === productName.toLowerCase()
-  );
-  if (model && model.id) {
-    try {
-      const response = await fetch('/api/products/' + model.id);
-      if (response.ok) {
-        const fullProduct = await response.json();
-        showProductShowcase(fullProduct);
+  // Fallback: fetch directly from server API
+  console.log('[handleProductCardClick] Trying server API fallback');
+  try {
+    const response = await fetch('/api/products');
+    if (response.ok) {
+      const allProducts = await response.json();
+      const product = allProducts.find(p =>
+        p.name.toLowerCase().includes(productName.toLowerCase()) ||
+        productName.toLowerCase().includes(p.name.toLowerCase())
+      );
+      if (product) {
+        console.log('[handleProductCardClick] Found via API:', product.name);
+        showProductShowcase(product);
         return;
       }
-    } catch (err) {
-      console.warn('[handleProductCardClick] Fetch failed:', err.message);
     }
+  } catch (err) {
+    console.error('[handleProductCardClick] API fallback failed:', err);
   }
 
-  // Last resort: use _raw if available on the cached model
-  if (model && model._raw) {
-    showProductShowcase(model._raw);
-  }
+  console.error('[handleProductCardClick] Could not find product:', productName);
 }
 
 // Set up category filter tab buttons
