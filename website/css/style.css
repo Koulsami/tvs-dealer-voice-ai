@@ -1294,3 +1294,20 @@ html {
 .product-showcase-content::-webkit-scrollbar-thumb:hover {
   background: #ccc;
 }
+
+/* Section highlight glow animation */
+.section-highlight {
+  animation: sectionGlow 2s ease-out;
+}
+
+@keyframes sectionGlow {
+  0% { box-shadow: 0 0 0 3px rgba(227, 24, 55, 0.4); border-radius: 12px; }
+  50% { box-shadow: 0 0 0 6px rgba(227, 24, 55, 0.2); }
+  100% { box-shadow: none; }
+}
+
+/* Showcase tab active state */
+.showcase-tab.active {
+  border-color: #E31837;
+  color: #E31837;
+}
