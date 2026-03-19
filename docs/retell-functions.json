@@ -103,6 +103,25 @@
       }
     },
     {
+      "name": "navigate_product_section",
+      "description": "Navigate the customer's screen to show a specific section of a vehicle's details. Use this when discussing pricing, specifications, colors, or features of a TVS vehicle - the customer's browser will automatically switch to the relevant section. If the vehicle isn't already displayed, it will be shown first.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "model_name": {
+            "type": "string",
+            "description": "Name of the TVS model (e.g., 'Apache RTR 200 4V', 'Jupiter 125', 'iQube'). Optional if the vehicle is already being shown on screen."
+          },
+          "section": {
+            "type": "string",
+            "enum": ["overview", "pricing", "specifications", "colors", "features"],
+            "description": "Which section to display. Use 'pricing' when discussing prices/EMI/on-road costs, 'specifications' for engine/power/mileage details, 'colors' when discussing available colors, 'features' for feature highlights, 'overview' for general product display."
+          }
+        },
+        "required": ["section"]
+      }
+    },
+    {
       "name": "escalate_to_human",
       "description": "Transfer the conversation to a human agent for complex queries like finance, exchange, complaints, or when customer explicitly requests",
       "parameters": {
