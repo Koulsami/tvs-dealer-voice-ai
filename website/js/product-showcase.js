@@ -5,6 +5,7 @@
 // Socket.IO connection
 let socket = null;
 let currentShowcaseProduct = null;
+let isShowcaseOpen = false;
 
 // Initialize Socket.IO connection
 function initializeSocket() {
@@ -161,6 +162,8 @@ window.navigateToSection = navigateToSection;
 // ================================================
 
 function showProductShowcase(product) {
+  if (isShowcaseOpen && currentShowcaseProduct?.name === product.name) return;
+  isShowcaseOpen = true;
   currentShowcaseProduct = product;
   const modal = document.getElementById('product-showcase-modal');
 
@@ -227,8 +230,6 @@ function showProductShowcase(product) {
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
 
-  // Play notification sound
-  playNotificationSound();
 }
 
 // ================================================
@@ -390,6 +391,7 @@ function populateFeaturesSection(product) {
 
 // Close the product showcase modal
 function closeProductShowcase() {
+  isShowcaseOpen = false;
   const modal = document.getElementById('product-showcase-modal');
   modal.classList.remove('active');
   document.body.style.overflow = '';
