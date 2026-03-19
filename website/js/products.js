@@ -82,8 +82,10 @@ function createProductCard(model) {
     mileage: model.mileage_kmpl
   }));
 
+  const escapedName = model.name.replace(/'/g, "\\'");
+
   return `
-    <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
+    <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden" data-category="${model.category}" onclick="handleProductCardClick('${escapedName}')">
       <div class="relative">
         <img src="${imageUrl}" alt="${model.name}" class="w-full h-48 object-cover" onerror="this.src='${getPlaceholderImage(model.category)}'">
         <span class="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold ${categoryColor}">
@@ -115,12 +117,17 @@ function createProductCard(model) {
             <p class="text-xs text-gray-500">Starting at</p>
             <p class="text-lg font-bold text-tvs-red">${formatPrice(model.ex_showroom_price_base)}</p>
           </div>
-          <button onclick="openRiaWithContext('model', '${model.name}', '${modelData}')" class="px-4 py-2 bg-tvs-red text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-            </svg>
-            Ask Ria
-          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="event.stopPropagation(); handleProductCardClick('${escapedName}')" class="px-3 py-2 border border-tvs-red text-tvs-red rounded-lg text-sm font-medium hover:bg-red-50 transition-colors">
+              View Details
+            </button>
+            <button onclick="event.stopPropagation(); openRiaWithContext('model', '${model.name}', '${modelData}')" class="px-4 py-2 bg-tvs-red text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              Ask Ria
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -201,6 +208,9 @@ async function renderProductGrid() {
     // Preload images for instant modal display
     preloadProductImages(models);
 
+    // Set up category filter tabs
+    setupCategoryFilters();
+
     console.log('[renderProductGrid] Done!');
   } catch (error) {
     console.error('[renderProductGrid] EXCEPTION:', error);
@@ -211,6 +221,67 @@ async function renderProductGrid() {
       </div>
     `;
   }
+}
+
+// Handle product card click — open showcase modal with full product data
+async function handleProductCardClick(productName) {
+  // Try rawProducts first (full data from server API)
+  if (window.productCache.rawProducts) {
+    const raw = window.productCache.rawProducts.find(p =>
+      p.name.toLowerCase() === productName.toLowerCase()
+    );
+    if (raw) {
+      showProductShowcase(raw);
+      return;
+    }
+  }
+
+  // Fallback: find the model in cached products and fetch full data by ID
+  const model = window.productCache.products.find(p =>
+    p.name.toLowerCase() === productName.toLowerCase()
+  );
+  if (model && model.id) {
+    try {
+      const response = await fetch('/api/products/' + model.id);
+      if (response.ok) {
+        const fullProduct = await response.json();
+        showProductShowcase(fullProduct);
+        return;
+      }
+    } catch (err) {
+      console.warn('[handleProductCardClick] Fetch failed:', err.message);
+    }
+  }
+
+  // Last resort: use _raw if available on the cached model
+  if (model && model._raw) {
+    showProductShowcase(model._raw);
+  }
+}
+
+// Set up category filter tab buttons
+function setupCategoryFilters() {
+  const filterTabs = document.querySelectorAll('.filter-tab');
+  if (!filterTabs.length) return;
+
+  filterTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Update active state
+      filterTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      const category = tab.getAttribute('data-category');
+      const cards = document.querySelectorAll('.product-card');
+
+      cards.forEach(card => {
+        if (category === 'All' || card.getAttribute('data-category') === category) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  });
 }
 
 // Initialize on page load

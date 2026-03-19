@@ -770,11 +770,35 @@
 
 /* Product card hover effect */
 .product-card {
-  transition: all 0.3s ease;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .product-card:hover {
-  transform: translateY(-8px);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+}
+
+/* Category filter tabs */
+.filter-tab {
+  padding: 8px 20px;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  background: #f3f4f6;
+  color: #374151;
+  transition: all 0.2s ease;
+}
+
+.filter-tab.active {
+  background: #E31837;
+  color: white;
+}
+
+.filter-tab:hover:not(.active) {
+  background: #e5e7eb;
 }
 
 /* Smooth scrolling */
