@@ -225,6 +225,7 @@ async function renderProductGrid() {
 
 // Handle product card click — open showcase modal with full product data
 async function handleProductCardClick(productName) {
+  console.log('[handleProductCardClick] productName:', productName, '| rawProducts length:', window.productCache.rawProducts?.length ?? 0);
   // Try rawProducts first (full data from server API)
   if (window.productCache.rawProducts) {
     const raw = window.productCache.rawProducts.find(p =>

@@ -587,7 +587,7 @@ app.post('/api/retell-webhook', (req, res) => {
         if (targetSocketId) {
           io.to(targetSocketId).emit('show_product_section', eventData);
         } else {
-          io.emit('show_product_section', eventData);
+          console.log('[navigate_product_section] No specific client found, skipping emit');
         }
       }
     } else if (section) {
@@ -599,7 +599,7 @@ app.post('/api/retell-webhook', (req, res) => {
       if (targetSocketId) {
         io.to(targetSocketId).emit('navigate_section', eventData);
       } else {
-        io.emit('navigate_section', eventData);
+        console.log('[navigate_product_section] No specific client found, skipping emit');
       }
     }
 
@@ -660,9 +660,7 @@ function handleShowVehicleDetails(args, callId, metadata = {}) {
       io.to(targetSocketId).emit('show_product', eventData);
       console.log(`[Function] Sent product to specific client: ${targetSocketId} (session: ${sessionId})`);
     } else {
-      // Fallback: broadcast to all (for testing/demo purposes)
-      io.emit('show_product', eventData);
-      console.log('[Function] No specific client found, broadcasted to all clients');
+      console.log('[Function] No specific client found, skipping emit');
     }
   } else {
     console.log(`[Function] Product not found: ${modelName}`);
